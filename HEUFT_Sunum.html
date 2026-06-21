@@ -474,7 +474,7 @@ body.role-operator .admin-only{display:none!important;}
       <div><div class="fl" data-i18n="am_name">Ürün Adı</div><input class="fi" id="am_name" placeholder="Konveyör Bant Tutucusu"></div>
     </div>
     <div class="frow">
-      <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="am_maker" placeholder="HEUFT GmbH"></div>
+      <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="am_maker" placeholder="HEUFT Systemtechnik GmbH"></div>
       <div><div class="fl" data-i18n="am_loc">Konum</div><input class="fi" id="am_loc" placeholder="R1-K1-B1"></div>
     </div>
     <div class="frow">
@@ -486,7 +486,7 @@ body.role-operator .admin-only{display:none!important;}
       <div><div class="fl" data-i18n="am_unitw">Birim Ürün Ağırlığı (g)</div><input class="fi" type="number" id="am_unitw" placeholder="120" oninput="calcQty()"></div>
       <div><div class="fl" data-i18n="am_boxw">Kutu Aktif Ağırlığı (g)</div><input class="fi" type="number" id="am_boxw" placeholder="5640" oninput="calcQty()"></div>
     </div>
-    <div style="border-top:1px solid var(--brd);padding-top:9px;"><div class="fl" style="color:var(--org);" data-i18n="km_section">Kanban-Lager Parametreleri (Pull-System)</div></div>
+    <div style="border-top:1px solid var(--brd);padding-top:9px;"><div class="fl" style="color:var(--org);" data-i18n="km_section">Stok ve Tüketim Parametreleri</div></div>
     <div class="frow">
       <div><div class="fl" data-i18n="km_avg">Ø Günlük Tüketim</div><input class="fi" type="number" id="am_avg" placeholder="3"></div>
       <div><div class="fl" data-i18n="km_lead">Tedarik Süresi (gün)</div><input class="fi" type="number" id="am_lead" placeholder="7"></div>
@@ -567,7 +567,7 @@ body.role-operator .admin-only{display:none!important;}
     </div>
     <div class="frow">
       <div><div class="fl" data-i18n="bx_qty">Miktar (adet)</div><input class="fi" type="number" id="bx_qty" placeholder="0"></div>
-      <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="bx_maker" placeholder="HEUFT GmbH"></div>
+      <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="bx_maker" placeholder="HEUFT Systemtechnik GmbH"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;">
       <button class="br" onclick="removeBox()"><i class="ti ti-trash"></i> <span data-i18n="bx_delbox">Kutuyu Sil</span></button>
@@ -706,7 +706,7 @@ tr:{
   auth_demo:"Demo: admin / 1234 (Yönetici) · operator / 1234 (Operatör)", auth_fail:"Kullanıcı adı veya şifre hatalı!", auth_welcome:"Hoş geldiniz,",
   role_admin:"Yönetici (Admin)", role_operator:"Operatör", pm_settings:"Profil Ayarları", pm_pass:"Şifre Değiştir", pm_logout:"Çıkış Yap",
   pm_newpass:"Yeni şifrenizi girin:", toast_passchg:"Şifre değiştirildi!", audit_login:"Giriş yaptı", audit_logout:"Çıkış yaptı", audit_change_pass:"Şifre değiştirdi",
-  km_section:"Kanban-Lager Parametreleri (Pull-System)", km_avg:"Ø Günlük Tüketim", km_lead:"Tedarik Süresi (gün)",
+  km_section:"Stok ve Tüketim Parametreleri", km_avg:"Ø Günlük Tüketim", km_lead:"Tedarik Süresi (gün)",
   km_beh:"Kap Kapasitesi (Behälter)", km_strat:"Çıkış Stratejisi",
   am_din:"DIN / ISO Normu", am_edit_title:"Artikel Düzenle", toast_artupd:"Artikel güncellendi!", btn_view:"Tam Ekran",
   lc_scale:"Doluluk Ölçeği", lc_max:"Max", lc_min:"Min",
@@ -789,7 +789,7 @@ de:{
   auth_demo:"Demo: admin / 1234 (Admin) · operator / 1234 (Operator)", auth_fail:"Benutzername oder Passwort falsch!", auth_welcome:"Willkommen,",
   role_admin:"Administrator", role_operator:"Operator", pm_settings:"Profileinstellungen", pm_pass:"Passwort ändern", pm_logout:"Abmelden",
   pm_newpass:"Neues Passwort eingeben:", toast_passchg:"Passwort geändert!", audit_login:"Angemeldet", audit_logout:"Abgemeldet", audit_change_pass:"Passwort geändert",
-  km_section:"Kanban-Lager Parameter (Pull-System)", km_avg:"Ø Tagesverbrauch", km_lead:"Wiederbeschaffungszeit (Tage)",
+  km_section:"Bestands- und Verbrauchsparameter", km_avg:"Ø Tagesverbrauch", km_lead:"Wiederbeschaffungszeit (Tage)",
   km_beh:"Behältermenge", km_strat:"Entnahmestrategie",
   am_din:"DIN / ISO Norm", am_edit_title:"Artikel bearbeiten", toast_artupd:"Artikel aktualisiert!", btn_view:"Vollbild",
   lc_scale:"Füllstandsskala", lc_max:"Max", lc_min:"Min",
@@ -890,16 +890,13 @@ function sv(id,el){
 
 setInterval(()=>{const n=new Date();document.getElementById('clk').textContent=n.getDate().toString().padStart(2,'0')+'.'+(n.getMonth()+1).toString().padStart(2,'0')+'.'+n.getFullYear()+' · '+n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');},1000);
 
+let _logoScale=1;
 function handleLogoFile(input){
   const f=input.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=e=>{
-    document.getElementById('logoImg').src=e.target.result;
-    document.getElementById('logoImg').style.display='block';
-    document.getElementById('defIcon').style.display='none';
-    showToast(t('toast_logo'));
-  };
+  r.onload=e=>{ openImgEdit(e.target.result, _logoScale||1, {type:'logo'}); };
   r.readAsDataURL(f);
+  input.value='';
 }
 
 let toastTimer=null;
@@ -912,17 +909,17 @@ function showToast(msg){
 }
 
 window.ARTS=[
-  {no:'HBE010223',n:'Konveyör Bant Tutucusu',nd:'Förderbandhalter',maker:'HEUFT GmbH',loc:'R2-K3-B1',unitw:120,boxw:5640,qty:47,st:'ok',img:'',qr:''},
-  {no:'HBE010147',n:'Geçen Tutucu',nd:'Durchlaufhalter',maker:'HEUFT GmbH',loc:'R1-K3-B2',unitw:85,boxw:255,qty:3,st:'crit',img:'',qr:''},
+  {no:'HBE010223',n:'Konveyör Bant Tutucusu',nd:'Förderbandhalter',maker:'HEUFT Systemtechnik GmbH',loc:'R2-K3-B1',unitw:120,boxw:5640,qty:47,st:'ok',img:'',qr:''},
+  {no:'HBE010147',n:'Geçen Tutucu',nd:'Durchlaufhalter',maker:'HEUFT Systemtechnik GmbH',loc:'R1-K3-B2',unitw:85,boxw:255,qty:3,st:'crit',img:'',qr:''},
   {no:'HBE010089',n:'V-Kayış 8mm',nd:'Keilriemen 8mm',maker:'Contitech',loc:'R3-K5-B1',unitw:45,boxw:540,qty:12,st:'low',img:'',qr:''},
-  {no:'HBE010312',n:'Konveyör Rulosu Ø50',nd:'Förderrolle Ø50',maker:'HEUFT GmbH',loc:'R4-K2-B3',unitw:380,boxw:10640,qty:28,st:'ok',img:'',qr:''},
+  {no:'HBE010312',n:'Konveyör Rulosu Ø50',nd:'Förderrolle Ø50',maker:'HEUFT Systemtechnik GmbH',loc:'R4-K2-B3',unitw:380,boxw:10640,qty:28,st:'ok',img:'',qr:''},
   {no:'HBE010445',n:'Tahrik Zinciri 3/8"',nd:'Antriebskette 3/8"',maker:'Renold',loc:'R5-K1-B2',unitw:230,boxw:14950,qty:65,st:'ok',img:'',qr:''},
   {no:'HBE009180',n:'Fotosel Verici',nd:'Lichtschranken-Sender',maker:'Sick AG',loc:'R1-K4-B2',unitw:156,boxw:5304,qty:34,st:'ok',img:'',qr:''},
-  {no:'HBE009234',n:'Konveyör Rulosu Ø40',nd:'Förderrolle Ø40',maker:'HEUFT GmbH',loc:'R2-K1-B4',unitw:290,boxw:2320,qty:8,st:'low',img:'',qr:''},
+  {no:'HBE009234',n:'Konveyör Rulosu Ø40',nd:'Förderrolle Ø40',maker:'HEUFT Systemtechnik GmbH',loc:'R2-K1-B4',unitw:290,boxw:2320,qty:8,st:'low',img:'',qr:''},
   {no:'HBE009412',n:'Fotosel Lens',nd:'Lichtschranken-Linse',maker:'Sick AG',loc:'R1-K2-B3',unitw:78,boxw:78,qty:1,st:'crit',img:'',qr:''},
   {no:'HBE009301',n:'Encoder Diski',nd:'Encoder-Scheibe',maker:'Baumer',loc:'R3-K4-B2',unitw:445,boxw:9790,qty:22,st:'ok',img:'',qr:''},
   {no:'HBE009508',n:'Pnömatik Silindir',nd:'Pneumatikzylinder',maker:'Festo',loc:'R4-K3-B1',unitw:820,boxw:7380,qty:9,st:'ok',img:'',qr:''},
-  {no:'HBE010587',n:'Dişli Kasnak 20T',nd:'Zahnriemenscheibe 20Z',maker:'HEUFT GmbH',loc:'R2-K4-B2',unitw:195,boxw:6045,qty:31,st:'ok',img:'',qr:''},
+  {no:'HBE010587',n:'Dişli Kasnak 20T',nd:'Zahnriemenscheibe 20Z',maker:'HEUFT Systemtechnik GmbH',loc:'R2-K4-B2',unitw:195,boxw:6045,qty:31,st:'ok',img:'',qr:''},
   {no:'HBE009634',n:'Motor Kaplingi',nd:'Motorkupplung',maker:'KTR',loc:'R5-K2-B4',unitw:680,boxw:9520,qty:14,st:'ok',img:'',qr:''},
 ];
 function artName(a){ return (curLang==='de' && a.nd) ? a.nd : a.n; }
@@ -1070,6 +1067,8 @@ function saveBox(){
   b.qty=parseInt(document.getElementById('bx_qty').value)||0;
   if(a){
     /* Bağlı: ürün bilgisi Artikel modülünden CANLI gelir — kopya saklama */
+    /* Konum senkronizasyonu: ürünün konumu bu kutunun konumuna ayarlanır */
+    a.loc=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
     delete b.pn; delete b.ver; delete b.vrt; delete b.maker;
   } else {
     /* Bağlantısız manuel giriş */
@@ -1123,6 +1122,12 @@ function applyImgEdit(){
     const img=document.getElementById('am_imgPrev');
     img.src=_ieData; img.style.display='block'; img.style.transform='scale('+_ieScale+')';
     document.getElementById('am_imgIcon').style.display='none';
+  } else if(_ieTarget.type==='logo'){
+    _logoScale=_ieScale;
+    const img=document.getElementById('logoImg');
+    img.src=_ieData; img.style.display='block'; img.style.transform='scale('+_ieScale+')';
+    document.getElementById('defIcon').style.display='none';
+    closeImgEdit(); showToast(t('toast_logo')); return;
   }
   closeImgEdit();
   showToast(t('toast_imgset'));
@@ -1399,7 +1404,7 @@ function renderArt(data){
       <div style="font-size:9px;color:var(--txt3);">${a.maker} · ${a.loc}</div>
       <div style="font-size:9px;color:var(--txt3);">${a.unitw}g/${t('unit_pcs')} · ${(a.boxw/1000).toFixed(2)}kg ${t('unit_box')}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
-        <span style="font-size:13px;font-weight:700;">${a.qty}</span>${stTag(a.st)}
+        <span style="font-size:13px;font-weight:700;">${a.qty} <span style="font-size:9px;font-weight:400;color:var(--txt3);">${t('unit_pcs')}</span></span>${stTag(a.st)}
       </div>
       ${a.qr?`<div style="margin-top:5px;text-align:center;"><img src="${a.qr}" onclick="event.stopPropagation();openQr('${a.no}')" data-tip="QR · ${t('btn_view')}" style="height:28px;cursor:pointer;border-radius:3px;"></div>`:''}
      </div>
@@ -1686,7 +1691,7 @@ function resetUploadBox(imgId,iconId){
 function saveArtikel(){
   const no=document.getElementById('am_no').value.trim();
   const name=document.getElementById('am_name').value.trim();
-  const maker=document.getElementById('am_maker').value.trim()||'—';
+  const maker=document.getElementById('am_maker').value.trim()||'HEUFT Systemtechnik GmbH';
   const loc=document.getElementById('am_loc').value.trim()||'—';
   const ver=document.getElementById('am_ver').value.trim();
   const vrt=document.getElementById('am_var').value.trim();
