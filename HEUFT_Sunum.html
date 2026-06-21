@@ -349,10 +349,11 @@ body.role-operator .admin-only{display:none!important;}
     <button class="iconbtn" onclick="reportOrderPDF()" title="PDF"><i class="ti ti-file-type-pdf"></i></button></div>
   <div class="cb" id="kanbanSuggest"></div></div>
   <div class="card"><div class="ch"><i class="ti ti-arrow-autofit-down" style="color:var(--org);"></i><span class="ct" data-i18n="kb_table">Stok Bilgi Tablosu</span>
-    <span style="font-size:9px;color:var(--txt3);" data-i18n="kb_formula">Bestellpunkt = (Ø Tüketim × Tedarik Süresi) + Mindestbestand</span></div>
+    <input class="fi" id="kbSearch" data-i18n-ph="kb_search" placeholder="Ürün ara (HBE no / ad)..." oninput="renderKanban()" style="max-width:220px;">
+  </div>
   <div class="cb" style="padding:0;"><table class="dt2"><thead><tr>
     <th data-i18n="kb_add">Ekle</th><th data-i18n="th_art">Artikel</th><th data-i18n="kb_stock">Stok</th><th data-i18n="kb_min">Min</th>
-    <th data-i18n="kb_rop">Sip. Noktası</th><th data-i18n="kb_strat">Strateji</th><th data-i18n="th_status">Durum</th><th data-i18n="kb_orderq">Öneri</th><th data-i18n="kb_call">Çağır</th>
+    <th data-i18n="kb_rop">Sip. Noktası</th><th data-i18n="kb_strat">Strateji</th><th data-i18n="th_status">Durum</th><th data-i18n="kb_orderq">Öneri</th>
   </tr></thead><tbody id="kanbanBody"></tbody></table></div></div>
 </div>
 
@@ -699,7 +700,7 @@ tr:{
   kb_ok:"Yeterli", kb_order:"Sipariş Noktası", kb_crit:"Kritik (Min. Altı)", kb_sugcount:"Sipariş Önerisi",
   kb_suggest:"Sipariş Önerileri (Bestellvorschlag)", kb_table:"Stok Bilgi Tablosu",
   kb_formula:"Bestellpunkt = (Ø Tüketim × Tedarik Süresi) + Mindestbestand",
-  kb_stock:"Stok", kb_min:"Min", kb_rop:"Sip. Noktası", kb_strat:"Strateji", kb_orderq:"Öneri", kb_call:"Çağır", kb_add:"Ekle", kb_manual:"Seçilen / Manuel Eklenen",
+  kb_stock:"Stok", kb_min:"Min", kb_rop:"Sip. Noktası", kb_strat:"Strateji", kb_orderq:"Öneri", kb_call:"Çağır", kb_add:"Ekle", kb_manual:"Seçilen / Manuel Eklenen", kb_search:"Ürün ara (HBE no / ad)...",
   kb_noorder:"Tüm stoklar yeterli seviyede ✓", kb_order_pcs:"adet sipariş et", kb_target:"Hedef",
   rename_regal:"Regal adını girin:", toast_regalren:"Regal adı güncellendi!",
   dr_apply:"Uygula", dr_need:"Lütfen başlangıç ve bitiş tarihi seçin!", dr_days:"günlük dönem gösteriliyor",
@@ -782,7 +783,7 @@ de:{
   kb_ok:"Ausreichend", kb_order:"Meldebestand", kb_crit:"Kritisch (unter Min.)", kb_sugcount:"Bestellvorschläge",
   kb_suggest:"Bestellvorschläge", kb_table:"Bestandsinfo-Tabelle",
   kb_formula:"Bestellpunkt = (Ø Verbrauch × WBZ) + Mindestbestand",
-  kb_stock:"Bestand", kb_min:"Min", kb_rop:"Meldebestand", kb_strat:"Strategie", kb_orderq:"Vorschlag", kb_call:"Abrufen", kb_add:"Hinzu", kb_manual:"Manuell hinzugefügt",
+  kb_stock:"Bestand", kb_min:"Min", kb_rop:"Meldebestand", kb_strat:"Strategie", kb_orderq:"Vorschlag", kb_call:"Abrufen", kb_add:"Hinzu", kb_manual:"Manuell hinzugefügt", kb_search:"Artikel suchen (HBE-Nr. / Name)...",
   kb_noorder:"Alle Bestände ausreichend ✓", kb_order_pcs:"Stück bestellen", kb_target:"Ziel",
   rename_regal:"Regalname eingeben:", toast_regalren:"Regalname aktualisiert!",
   dr_apply:"Anwenden", dr_need:"Bitte Start- und Enddatum wählen!", dr_days:"Tage werden angezeigt",
@@ -1240,6 +1241,7 @@ function renderAudit(){
 /* ===== FAZ 5: PICK-BY-LIGHT (Artikel Çağırma) ===== */
 window.CALLS=[];
 window.ORDERLIST=new Set();
+window.ORDEREXCLUDE=new Set();
 function parseLoc(loc){
   const m=/R(\d+)-K(\d+)-B(\d+)/.exec(loc||'');
   if(!m) return null;
@@ -1333,8 +1335,8 @@ const KB_TAG={gruen:'tok',gelb:'tw',rot:'te'};
 const KB_KEY={gruen:'kb_ok',gelb:'kb_order',rot:'kb_crit'};
 const KB_GRPKEY={rot:'kb_crit',gelb:'kb_order',manual:'kb_manual'};
 function orderItems(){
-  /* Otomatik (kritik+sipariş noktası) + kullanıcının işaretledikleri (yeşil) */
-  const auto=window.ARTS.filter(a=>kanbanStatus(a)!=='gruen');
+  /* Otomatik (kritik+sipariş noktası, çıkarılmamış) + kullanıcının seçtikleri (yeşil) */
+  const auto=window.ARTS.filter(a=>kanbanStatus(a)!=='gruen' && !window.ORDEREXCLUDE.has(a.no));
   const manual=window.ARTS.filter(a=>window.ORDERLIST.has(a.no)&&kanbanStatus(a)==='gruen');
   return {auto,manual,all:[...auto,...manual]};
 }
@@ -1368,12 +1370,13 @@ function renderKanban(){
   }
   const kb=document.getElementById('kanbanBody');
   if(kb){
-    kb.innerHTML=window.ARTS.map(a=>{
+    const q=(document.getElementById('kbSearch')?document.getElementById('kbSearch').value:'').toLowerCase();
+    const rows=window.ARTS.filter(a=>!q||a.no.toLowerCase().includes(q)||artName(a).toLowerCase().includes(q));
+    kb.innerHTML=rows.length?rows.map(a=>{
       const st=kanbanStatus(a);
-      const inOrder = st!=='gruen' || window.ORDERLIST.has(a.no);
-      const autoLocked = st!=='gruen';
+      const inOrder = st!=='gruen' ? !window.ORDEREXCLUDE.has(a.no) : window.ORDERLIST.has(a.no);
       return `<tr>
-        <td style="text-align:center;"><input type="checkbox" ${inOrder?'checked':''} ${autoLocked?'disabled':''} onchange="toggleOrder('${a.no}',this.checked)" style="accent-color:var(--org);cursor:${autoLocked?'not-allowed':'pointer'};"></td>
+        <td style="text-align:center;"><input type="checkbox" ${inOrder?'checked':''} onchange="toggleOrder('${a.no}',this.checked)" style="accent-color:var(--org);cursor:pointer;width:15px;height:15px;"></td>
         <td style="color:var(--org);font-weight:700;">${a.no}<div style="font-size:8px;color:var(--txt3);font-weight:400;">${artName(a)}</div></td>
         <td style="font-weight:700;color:${KB_CLR[st]};">${a.qty}</td>
         <td>${mindestbestand(a)}</td>
@@ -1381,12 +1384,16 @@ function renderKanban(){
         <td><span class="tag tb2">${a.strategie}</span></td>
         <td><span class="tag ${KB_TAG[st]}">${t(KB_KEY[st])}</span></td>
         <td style="font-weight:700;color:${st==='gruen'?'var(--txt3)':'var(--org)'};">${st==='gruen'?'—':'+'+orderQty(a)}</td>
-        <td><button class="bo" style="padding:3px 8px;font-size:9px;" onclick="callOne('${a.no}')"><i class="ti ti-bell-ringing"></i> ${t('kb_call')}</button></td>
       </tr>`;
-    }).join('');
+    }).join(''):`<tr><td colspan="8" style="text-align:center;color:var(--txt3);padding:14px;">—</td></tr>`;
   }
 }
-function toggleOrder(no,on){ if(on) window.ORDERLIST.add(no); else window.ORDERLIST.delete(no); renderKanban(); }
+function toggleOrder(no,on){
+  const a=findArt(no); if(!a){ renderKanban(); return; }
+  if(kanbanStatus(a)==='gruen'){ if(on) window.ORDERLIST.add(no); else window.ORDERLIST.delete(no); }
+  else { if(on) window.ORDEREXCLUDE.delete(no); else window.ORDEREXCLUDE.add(no); }
+  renderKanban();
+}
 function reportOrderCSV(){
   const rows=[['Artikel','Ürün/Produkt','Stok/Bestand','Min','Bestellpunkt','Durum/Status','Strateji','Öneri/Vorschlag']];
   orderItems().all.forEach(a=>{const st=kanbanStatus(a);rows.push([a.no,artName(a),a.qty,mindestbestand(a),bestellpunkt(a),t(KB_KEY[st]),a.strategie,'+'+orderQty(a)]);});
