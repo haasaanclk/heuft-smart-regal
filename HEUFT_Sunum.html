@@ -344,12 +344,14 @@ body.role-operator .admin-only{display:none!important;}
     <div class="mc"><div class="mcic ir"><i class="ti ti-alert-octagon"></i></div><div class="mv" style="color:var(--red);" id="kb-rot">0</div><div class="ml" data-i18n="kb_crit">Min. Altı (Rot)</div></div>
     <div class="mc"><div class="mcic io"><i class="ti ti-clipboard-list"></i></div><div class="mv" style="color:var(--org);" id="kb-sug">0</div><div class="ml" data-i18n="kb_sugcount">Sipariş Önerisi</div></div>
   </div>
-  <div class="card"><div class="ch"><i class="ti ti-shopping-cart" style="color:var(--org);"></i><span class="ct" data-i18n="kb_suggest">Sipariş Önerileri (Bestellvorschlag)</span></div>
+  <div class="card"><div class="ch"><i class="ti ti-shopping-cart" style="color:var(--org);"></i><span class="ct" data-i18n="kb_suggest">Sipariş Önerileri (Bestellvorschlag)</span>
+    <button class="iconbtn" onclick="reportOrderCSV()" title="CSV"><i class="ti ti-file-spreadsheet"></i></button>
+    <button class="iconbtn" onclick="reportOrderPDF()" title="PDF"><i class="ti ti-file-type-pdf"></i></button></div>
   <div class="cb" id="kanbanSuggest"></div></div>
-  <div class="card"><div class="ch"><i class="ti ti-arrow-autofit-down" style="color:var(--org);"></i><span class="ct" data-i18n="kb_table">Kanban Stok Tablosu</span>
+  <div class="card"><div class="ch"><i class="ti ti-arrow-autofit-down" style="color:var(--org);"></i><span class="ct" data-i18n="kb_table">Stok Bilgi Tablosu</span>
     <span style="font-size:9px;color:var(--txt3);" data-i18n="kb_formula">Bestellpunkt = (Ø Tüketim × Tedarik Süresi) + Mindestbestand</span></div>
   <div class="cb" style="padding:0;"><table class="dt2"><thead><tr>
-    <th data-i18n="th_art">Artikel</th><th data-i18n="kb_stock">Stok</th><th data-i18n="kb_min">Min</th>
+    <th data-i18n="kb_add">Ekle</th><th data-i18n="th_art">Artikel</th><th data-i18n="kb_stock">Stok</th><th data-i18n="kb_min">Min</th>
     <th data-i18n="kb_rop">Sip. Noktası</th><th data-i18n="kb_strat">Strateji</th><th data-i18n="th_status">Durum</th><th data-i18n="kb_orderq">Öneri</th><th data-i18n="kb_call">Çağır</th>
   </tr></thead><tbody id="kanbanBody"></tbody></table></div></div>
 </div>
@@ -697,7 +699,7 @@ tr:{
   kb_ok:"Yeterli", kb_order:"Sipariş Noktası", kb_crit:"Kritik (Min. Altı)", kb_sugcount:"Sipariş Önerisi",
   kb_suggest:"Sipariş Önerileri (Bestellvorschlag)", kb_table:"Stok Bilgi Tablosu",
   kb_formula:"Bestellpunkt = (Ø Tüketim × Tedarik Süresi) + Mindestbestand",
-  kb_stock:"Stok", kb_min:"Min", kb_rop:"Sip. Noktası", kb_strat:"Strateji", kb_orderq:"Öneri", kb_call:"Çağır",
+  kb_stock:"Stok", kb_min:"Min", kb_rop:"Sip. Noktası", kb_strat:"Strateji", kb_orderq:"Öneri", kb_call:"Çağır", kb_add:"Ekle", kb_manual:"Seçilen / Manuel Eklenen",
   kb_noorder:"Tüm stoklar yeterli seviyede ✓", kb_order_pcs:"adet sipariş et", kb_target:"Hedef",
   rename_regal:"Regal adını girin:", toast_regalren:"Regal adı güncellendi!",
   dr_apply:"Uygula", dr_need:"Lütfen başlangıç ve bitiş tarihi seçin!", dr_days:"günlük dönem gösteriliyor",
@@ -780,7 +782,7 @@ de:{
   kb_ok:"Ausreichend", kb_order:"Meldebestand", kb_crit:"Kritisch (unter Min.)", kb_sugcount:"Bestellvorschläge",
   kb_suggest:"Bestellvorschläge", kb_table:"Bestandsinfo-Tabelle",
   kb_formula:"Bestellpunkt = (Ø Verbrauch × WBZ) + Mindestbestand",
-  kb_stock:"Bestand", kb_min:"Min", kb_rop:"Meldebestand", kb_strat:"Strategie", kb_orderq:"Vorschlag", kb_call:"Abrufen",
+  kb_stock:"Bestand", kb_min:"Min", kb_rop:"Meldebestand", kb_strat:"Strategie", kb_orderq:"Vorschlag", kb_call:"Abrufen", kb_add:"Hinzu", kb_manual:"Manuell hinzugefügt",
   kb_noorder:"Alle Bestände ausreichend ✓", kb_order_pcs:"Stück bestellen", kb_target:"Ziel",
   rename_regal:"Regalname eingeben:", toast_regalren:"Regalname aktualisiert!",
   dr_apply:"Anwenden", dr_need:"Bitte Start- und Enddatum wählen!", dr_days:"Tage werden angezeigt",
@@ -1237,6 +1239,7 @@ function renderAudit(){
 
 /* ===== FAZ 5: PICK-BY-LIGHT (Artikel Çağırma) ===== */
 window.CALLS=[];
+window.ORDERLIST=new Set();
 function parseLoc(loc){
   const m=/R(\d+)-K(\d+)-B(\d+)/.exec(loc||'');
   if(!m) return null;
@@ -1328,32 +1331,49 @@ function orderQty(a){
 const KB_CLR={gruen:'var(--grn)',gelb:'var(--yel)',rot:'var(--red)'};
 const KB_TAG={gruen:'tok',gelb:'tw',rot:'te'};
 const KB_KEY={gruen:'kb_ok',gelb:'kb_order',rot:'kb_crit'};
+const KB_GRPKEY={rot:'kb_crit',gelb:'kb_order',manual:'kb_manual'};
+function orderItems(){
+  /* Otomatik (kritik+sipariş noktası) + kullanıcının işaretledikleri (yeşil) */
+  const auto=window.ARTS.filter(a=>kanbanStatus(a)!=='gruen');
+  const manual=window.ARTS.filter(a=>window.ORDERLIST.has(a.no)&&kanbanStatus(a)==='gruen');
+  return {auto,manual,all:[...auto,...manual]};
+}
 function renderKanban(){
   window.ARTS.forEach(normalizeKanban);
   const byStatus=s=>window.ARTS.filter(a=>kanbanStatus(a)===s);
   const gruen=byStatus('gruen'),gelb=byStatus('gelb'),rot=byStatus('rot');
-  const sug=[...rot,...gelb];
+  const {auto,manual,all}=orderItems();
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('kb-gruen',gruen.length); set('kb-gelb',gelb.length); set('kb-rot',rot.length); set('kb-sug',sug.length);
+  set('kb-gruen',gruen.length); set('kb-gelb',gelb.length); set('kb-rot',rot.length); set('kb-sug',all.length);
   const badge=document.getElementById('kanbanNavBadge');
-  if(badge){ badge.textContent=sug.length; badge.style.display=sug.length?'inline-block':'none'; }
+  if(badge){ badge.textContent=all.length; badge.style.display=all.length?'inline-block':'none'; }
   const sg=document.getElementById('kanbanSuggest');
   if(sg){
-    sg.innerHTML = sug.length ? sug.map(a=>{
-      const st=kanbanStatus(a);
-      return `<div style="display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--bg4);border:1px solid var(--brd2);border-left:3px solid ${KB_CLR[st]};border-radius:7px;margin-bottom:6px;">
-        <i class="ti ti-shopping-cart" style="color:${KB_CLR[st]};font-size:16px;"></i>
-        <div style="flex:1;"><div style="font-weight:600;font-size:11px;">${a.no} <span style="color:var(--txt3);font-weight:400;">· ${artName(a)}</span></div>
-          <div style="font-size:9px;color:var(--txt3);">${t('kb_stock')}: ${a.qty} · ${t('kb_rop')}: ${bestellpunkt(a)} · ${t('kb_min')}: ${mindestbestand(a)}</div></div>
-        <div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:var(--org);">+${orderQty(a)}</div><div style="font-size:8px;color:var(--txt3);">${t('kb_order_pcs')}</div></div>
-      </div>`;
-    }).join('') : `<div style="color:var(--grn);font-size:11px;text-align:center;padding:14px;">${t('kb_noorder')}</div>`;
+    const groups=[['rot',rot],['gelb',gelb],['manual',manual]];
+    let html='';
+    groups.forEach(([key,arr])=>{
+      if(!arr.length) return;
+      html+=`<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:${key==='manual'?'var(--grn)':KB_CLR[key]};margin:6px 0 5px;">${t(KB_GRPKEY[key])} (${arr.length})</div>`;
+      html+=arr.map(a=>{
+        const st=kanbanStatus(a); const clr=key==='manual'?'var(--grn)':KB_CLR[st];
+        return `<div style="display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--bg4);border:1px solid var(--brd2);border-left:3px solid ${clr};border-radius:7px;margin-bottom:6px;">
+          <i class="ti ti-shopping-cart" style="color:${clr};font-size:16px;"></i>
+          <div style="flex:1;"><div style="font-weight:600;font-size:11px;">${a.no} <span style="color:var(--txt3);font-weight:400;">· ${artName(a)}</span></div>
+            <div style="font-size:9px;color:var(--txt3);">${t('kb_stock')}: ${a.qty} · ${t('kb_rop')}: ${bestellpunkt(a)} · ${t('kb_min')}: ${mindestbestand(a)}</div></div>
+          <div style="text-align:right;"><div style="font-size:15px;font-weight:700;color:var(--org);">+${orderQty(a)}</div><div style="font-size:8px;color:var(--txt3);">${t('kb_order_pcs')}</div></div>
+        </div>`;
+      }).join('');
+    });
+    sg.innerHTML = all.length ? html : `<div style="color:var(--grn);font-size:11px;text-align:center;padding:14px;">${t('kb_noorder')}</div>`;
   }
   const kb=document.getElementById('kanbanBody');
   if(kb){
     kb.innerHTML=window.ARTS.map(a=>{
       const st=kanbanStatus(a);
+      const inOrder = st!=='gruen' || window.ORDERLIST.has(a.no);
+      const autoLocked = st!=='gruen';
       return `<tr>
+        <td style="text-align:center;"><input type="checkbox" ${inOrder?'checked':''} ${autoLocked?'disabled':''} onchange="toggleOrder('${a.no}',this.checked)" style="accent-color:var(--org);cursor:${autoLocked?'not-allowed':'pointer'};"></td>
         <td style="color:var(--org);font-weight:700;">${a.no}<div style="font-size:8px;color:var(--txt3);font-weight:400;">${artName(a)}</div></td>
         <td style="font-weight:700;color:${KB_CLR[st]};">${a.qty}</td>
         <td>${mindestbestand(a)}</td>
@@ -1365,6 +1385,37 @@ function renderKanban(){
       </tr>`;
     }).join('');
   }
+}
+function toggleOrder(no,on){ if(on) window.ORDERLIST.add(no); else window.ORDERLIST.delete(no); renderKanban(); }
+function reportOrderCSV(){
+  const rows=[['Artikel','Ürün/Produkt','Stok/Bestand','Min','Bestellpunkt','Durum/Status','Strateji','Öneri/Vorschlag']];
+  orderItems().all.forEach(a=>{const st=kanbanStatus(a);rows.push([a.no,artName(a),a.qty,mindestbestand(a),bestellpunkt(a),t(KB_KEY[st]),a.strategie,'+'+orderQty(a)]);});
+  const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='heuft_siparis_onerileri_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  showToast(t('toast_csv'));
+}
+function reportOrderPDF(){
+  const data=orderItems().all;
+  const rows=data.map(a=>{const st=kanbanStatus(a);return `<tr><td>${a.no}</td><td>${artName(a)}</td><td style="text-align:center;">${a.qty}</td><td style="text-align:center;">${mindestbestand(a)}</td><td style="text-align:center;">${bestellpunkt(a)}</td><td>${t(KB_KEY[st])}</td><td>${a.strategie}</td><td style="text-align:center;font-weight:bold;color:#cc4400;">+${orderQty(a)}</td></tr>`;}).join('');
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>${t('kb_suggest')}</title><style>
+    body{font-family:Arial,sans-serif;padding:30px;color:#222;}
+    h1{color:#ff5500;font-size:20px;border-bottom:2px solid #ff5500;padding-bottom:8px;}
+    .sub{color:#777;font-size:12px;margin-bottom:18px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{background:#ff5500;color:#fff;text-align:left;padding:7px 9px;}
+    td{padding:6px 9px;border-bottom:1px solid #eee;}
+    tr:nth-child(even){background:#faf6f2;}
+  </style></head><body>
+    <h1>HEUFT — ${t('kb_suggest')}</h1>
+    <div class="sub">${t('rep_date')}: ${new Date().toLocaleString(curLang==='de'?'de-DE':'tr-TR')} · ${data.length} ${t('unit_pcs')}</div>
+    <table><thead><tr><th>Artikel</th><th>${t('th_prod')}</th><th>${t('kb_stock')}</th><th>${t('kb_min')}</th><th>${t('kb_rop')}</th><th>${t('th_status')}</th><th>${t('kb_strat')}</th><th>${t('kb_orderq')}</th></tr></thead><tbody>${rows}</tbody></table>
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  w.document.close(); showToast(t('toast_pdf'));
 }
 
 function stTag(s){
