@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>HEUFT Smart Regal System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --org:#ff5500;--org2:#cc4400;--orgl:rgba(255,85,0,0.12);
+  --bg:#1a1d27;--bg3:#252a38;--bg4:#2d3245;--bg5:#333a52;
+  --brd:rgba(255,255,255,0.07);--brd2:rgba(255,255,255,0.12);
+  --txt:#eef0f8;--txt2:#9ba3bf;--txt3:#5a6380;
+  --grn:#0fdb7e;--grn2:rgba(15,219,126,0.12);
+  --red:#ff4560;--red2:rgba(255,69,96,0.12);
+  --yel:#ffb800;--yel2:rgba(255,184,0,0.12);
+  --blu:#4d9dff;--blu2:rgba(77,157,255,0.12);
+  --cyan:#22d3ee;--sh:0 4px 20px rgba(0,0,0,0.35);
+}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:12px;}
+.app{display:flex;flex-direction:column;height:100vh;min-height:600px;}
+.tb{height:52px;background:rgba(33,37,50,0.95);border-bottom:1px solid var(--brd2);display:flex;align-items:center;padding:0 16px;gap:14px;flex-shrink:0;position:relative;z-index:10;}
+.logo-zone{display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;}
+.logo-avatar{position:relative;width:38px;height:38px;border-radius:50%;flex-shrink:0;}
+.logo-avatar input[type=file]{display:none;}
+.logo-img-wrap{width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--org);position:relative;background:linear-gradient(135deg,#1e0a00,#2d1200);display:flex;align-items:center;justify-content:center;}
+.logo-img-wrap img{width:100%;height:100%;object-fit:cover;display:none;border-radius:50%;}
+.logo-img-wrap .def-icon{font-size:16px;color:var(--org);font-weight:900;}
+.logo-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s;}
+.logo-overlay i{font-size:13px;color:#fff;}
+.logo-avatar:hover .logo-overlay{opacity:1;}
+.logo-badge{position:absolute;bottom:-1px;right:-1px;width:14px;height:14px;background:var(--org);border-radius:50%;border:2px solid #1a1d27;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700;}
+.logo-name{font-size:13px;font-weight:700;}
+.logo-sub{font-size:9px;color:var(--txt3);}
+.lsep{width:1px;height:28px;background:var(--brd2);}
+.tb-mid{display:flex;align-items:center;gap:14px;flex:1;justify-content:center;font-size:10px;color:var(--txt3);flex-wrap:wrap;}
+.tbi{display:flex;align-items:center;gap:5px;}
+.dot{width:6px;height:6px;border-radius:50%;}
+.dg{background:var(--grn);box-shadow:0 0 6px var(--grn);} .dy{background:var(--yel);} .do{background:var(--org);}
+.sv{font-weight:600;} .svg{color:var(--grn);} .svy{color:var(--yel);} .svo{color:var(--org);}
+.mqtt-pill{display:flex;align-items:center;gap:5px;padding:3px 10px;background:rgba(15,219,126,0.1);border:1px solid rgba(15,219,126,0.25);border-radius:20px;font-size:10px;color:var(--grn);}
+.mqtt-dot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.tb-r{display:flex;align-items:center;gap:10px;}
+.ua{width:30px;height:30px;border-radius:50%;background:var(--org2);border:2px solid var(--org);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
+.langsw{display:flex;gap:2px;background:var(--bg4);border:1px solid var(--brd2);border-radius:7px;padding:2px;}
+.langbtn{padding:4px 9px;border-radius:5px;border:none;background:transparent;color:var(--txt3);font-size:10px;cursor:pointer;font-weight:600;}
+.langbtn.on{background:var(--org);color:#fff;}
+.body{display:flex;flex:1;overflow:hidden;}
+.sb{width:190px;background:rgba(33,37,50,.8);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.ns{font-size:9px;color:var(--txt3);letter-spacing:.8px;text-transform:uppercase;padding:12px 14px 4px;font-weight:600;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:11px;font-weight:500;color:var(--txt3);cursor:pointer;border-left:2px solid transparent;}
+.ni:hover{color:var(--txt2);background:rgba(255,255,255,.04);}
+.ni.active{color:var(--org);border-left-color:var(--org);background:var(--orgl);}
+.ni i{font-size:15px;flex-shrink:0;}
+.nbdg{margin-left:auto;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.nb-r{background:var(--red2);color:var(--red);} .nb-g{background:var(--grn2);color:var(--grn);}
+.sb-bot{margin-top:auto;border-top:1px solid var(--brd);padding:10px 14px;}
+.qs{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;}
+.ql{color:var(--txt3);} .qv{color:var(--txt2);}
+.main{flex:1;overflow-y:auto;padding:14px;background:var(--bg);}
+.view{display:none;flex-direction:column;gap:11px;}
+.view.active{display:flex;}
+.rp{width:238px;background:rgba(33,37,50,.8);border-left:1px solid var(--brd);padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:11px;flex-shrink:0;}
+.card{background:var(--bg3);border:1px solid var(--brd2);border-radius:10px;overflow:hidden;box-shadow:var(--sh);}
+.ch{background:linear-gradient(135deg,var(--bg4),var(--bg3));border-bottom:1px solid var(--brd);padding:9px 13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ct{font-size:12px;font-weight:600;flex:1;}
+.cb{padding:11px 13px;}
+.mg{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;}
+.mc{background:var(--bg3);border:1px solid var(--brd2);border-radius:10px;padding:11px 13px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.mcic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:7px;}
+.ig{background:var(--grn2);color:var(--grn);} .ir{background:var(--red2);color:var(--red);}
+.io{background:var(--orgl);color:var(--org);} .ib{background:var(--blu2);color:var(--blu);}
+.mv{font-size:20px;font-weight:700;} .ml{font-size:9px;color:var(--txt3);text-transform:uppercase;margin-top:1px;}
+.mtr{font-size:9px;margin-top:5px;} .tg{color:var(--grn);} .tr2{color:var(--red);}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap;}
+.tok{background:var(--grn2);color:var(--grn);border:1px solid rgba(15,219,126,.2);}
+.tw{background:var(--yel2);color:var(--yel);border:1px solid rgba(255,184,0,.2);}
+.te{background:var(--red2);color:var(--red);border:1px solid rgba(255,69,96,.2);}
+.tb2{background:var(--blu2);color:var(--blu);border:1px solid rgba(77,157,255,.2);}
+.rv-wrap{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+.ru{background:var(--bg4);border:1px solid var(--brd2);border-radius:8px;padding:9px;min-width:115px;flex-shrink:0;}
+.ru-t{font-size:9px;color:var(--txt3);text-transform:uppercase;text-align:center;margin-bottom:7px;font-weight:600;}
+.kat-r{display:flex;gap:3px;align-items:center;margin-bottom:3px;}
+.kl{font-size:8px;color:var(--txt3);width:18px;}
+.bslot{width:17px;height:17px;border-radius:3px;border:1px solid;cursor:pointer;}
+.bf{background:#1f1200;border-color:var(--org);} .bm{background:#1f1800;border-color:var(--yel);}
+.bl{background:#200a0a;border-color:var(--red);} .be{background:var(--bg5);border-color:var(--brd);}
+.ba{background:var(--org);border-color:var(--org);animation:px 1.5s infinite;}
+@keyframes px{0%,100%{opacity:1;}50%{opacity:.5;}}
+.lbar{height:3px;border-radius:1px;margin-top:6px;} .lon{background:var(--org);opacity:.7;} .loff{background:#222;}
+.actr{display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.acd{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.act{font-size:10px;color:var(--txt3);line-height:1.5;flex:1;} .act strong{color:var(--txt2);}
+.actime{font-size:9px;color:var(--txt3);white-space:nowrap;}
+.mqtt-log{background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:10px;font-family:monospace;font-size:10px;height:100px;overflow-y:auto;display:flex;flex-direction:column-reverse;}
+.ml-row{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:8px;}
+.ml-time{color:var(--txt3);flex-shrink:0;} .ml-topic{color:var(--cyan);flex-shrink:0;} .ml-payload{color:var(--grn);}
+.pt2{font-size:9px;font-weight:600;color:var(--txt3);letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px;}
+.pw{width:100%;height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:3px;}
+.pb{height:4px;border-radius:2px;}
+.bo{background:var(--org);border:none;border-radius:6px;padding:6px 12px;color:#fff;font-size:11px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;}
+.bo:hover{background:var(--org2);}
+.bd{background:var(--bg4);border:1px solid var(--brd2);border-radius:6px;padding:6px 12px;color:var(--txt2);font-size:11px;cursor:pointer;}
+.br{background:var(--red2);border:1px solid rgba(255,69,96,.3);border-radius:6px;padding:6px 12px;color:var(--red);font-size:11px;cursor:pointer;}
+.fi{background:var(--bg4);border:1px solid var(--brd2);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--txt);outline:none;width:100%;}
+.fi:focus{border-color:var(--org);}
+.fl{font-size:9px;color:var(--txt3);text-transform:uppercase;margin-bottom:3px;font-weight:600;}
+.sel2{background:var(--bg4);border:1px solid var(--brd2);border-radius:5px;padding:4px 8px;font-size:10px;color:var(--txt2);outline:none;}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--bg4);border:1px solid var(--brd2);border-radius:16px;padding:22px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:13px;box-shadow:0 20px 60px rgba(0,0,0,.7);}
+.modal-box.sm{width:380px;}
+.m-title{font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;}
+.m-x{cursor:pointer;color:var(--txt3);font-size:16px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.upbox{border:2px dashed rgba(255,85,0,.4);border-radius:10px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;background:var(--orgl);text-align:center;}
+.upbox:hover{border-color:var(--org);background:rgba(255,85,0,.18);}
+.upbox img{max-height:60px;border-radius:6px;display:none;}
+.upbox i{font-size:22px;color:var(--org);}
+.upbox span{font-size:10px;color:var(--txt2);}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--bg4);border:1px solid var(--brd2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:9px;font-size:11px;color:var(--txt2);box-shadow:0 8px 28px rgba(0,0,0,.5);z-index:999;transform:translateY(80px);opacity:0;transition:all .25s cubic-bezier(.34,1.56,.64,1);}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast i{font-size:16px;color:var(--grn);}
+.rfid-r{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg4);border-radius:7px;border:1px solid var(--brd2);margin-bottom:5px;cursor:pointer;}
+.rfid-r:hover{border-color:var(--org);}
+.dt2{width:100%;border-collapse:collapse;font-size:11px;}
+.dt2 th{text-align:left;color:var(--txt3);font-size:9px;font-weight:600;padding:6px 9px;border-bottom:1px solid var(--brd2);text-transform:uppercase;}
+.dt2 td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--txt2);}
+.iconbtn{width:24px;height:24px;border-radius:5px;border:1px solid var(--brd2);background:var(--bg5);color:var(--txt3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:11px;}
+.iconbtn:hover{color:var(--org);border-color:var(--org);}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="tb">
+  <div class="logo-zone" onclick="document.getElementById('logoFile').click()">
+    <div class="logo-avatar">
+      <input type="file" id="logoFile" accept="image/*" onchange="handleLogoFile(this)">
+      <div class="logo-img-wrap" id="logoWrap"><img id="logoImg" alt="Logo"><span class="def-icon" id="defIcon">H</span><div class="logo-overlay"><i class="ti ti-camera"></i></div></div>
+      <div class="logo-badge">+</div>
+    </div>
+    <div><div class="logo-name" id="logoName">HEUFT</div><div class="logo-sub" data-i18n="sys_sub">Akıllı Depo Yönetim</div></div>
+  </div>
+  <div class="lsep"></div>
+  <div class="tb-mid">
+    <div class="tbi"><span class="dot dg"></span><span data-i18n="t_sys">Sistem</span>: <span class="sv svg">ONLINE</span></div>
+    <div class="tbi"><span class="dot do"></span>LoadCell: <span class="sv svo">25 <span data-i18n="t_active">Aktif</span></span></div>
+    <div class="tbi"><span class="dot dg"></span>RFID: <span class="sv svg">25/25</span></div>
+    <div class="mqtt-pill"><span class="mqtt-dot"></span>MQTT · <span id="tb-mqc">0</span> msg</div>
+    <div style="font-size:10px;color:var(--txt3);" id="clk">13.06.2026 · 09:41</div>
+  </div>
+  <div class="tb-r">
+    <div class="langsw"><button class="langbtn on" id="lbTR" onclick="setLang('tr')">TR</button><button class="langbtn" id="lbDE" onclick="setLang('de')">DE</button></div>
+    <div class="ua">HB</div>
+  </div>
+</div>
+
+<div class="body">
+<div class="sb">
+  <div class="ns" data-i18n="nav_main">Ana Modüller</div>
+  <div class="ni active" onclick="sv('dash',this)"><i class="ti ti-layout-dashboard"></i><span data-i18n="nav_dash">DASHBOARD</span></div>
+  <div class="ni" onclick="sv('regal',this)"><i class="ti ti-server"></i><span data-i18n="nav_regal">REGAL YAPISI</span></div>
+  <div class="ni" onclick="sv('artikel',this)"><i class="ti ti-package"></i><span data-i18n="nav_art">ARTİKEL / ÜRÜN</span></div>
+  <div class="ni" onclick="sv('lc',this)"><i class="ti ti-weight"></i><span data-i18n="nav_lc">AĞIRLIK / LOADCELL</span></div>
+  <div class="ni" onclick="sv('rfid',this)"><i class="ti ti-radio"></i><span data-i18n="nav_rfid">RFID YÖNETİM</span></div>
+  <div class="ns" data-i18n="nav_ctrl">Kontrol</div>
+  <div class="ni" onclick="sv('esp',this)"><i class="ti ti-device-tablet"></i><span data-i18n="nav_esp">ESP32 EKRANLAR</span></div>
+  <div class="ni" onclick="sv('mqtt',this)"><i class="ti ti-antenna"></i><span data-i18n="nav_mqtt">MQTT MONITOR</span><span class="nbdg nb-g">●</span></div>
+  <div class="ni" onclick="sv('inv',this)"><i class="ti ti-clipboard-check"></i><span data-i18n="nav_inv">İNVENTUR</span></div>
+  <div class="ns" data-i18n="nav_rep">Raporlama</div>
+  <div class="ni" onclick="sv('stat',this)"><i class="ti ti-chart-bar"></i><span data-i18n="nav_stat">İSTATİSTİKLER</span></div>
+  <div class="ni" onclick="sv('uy',this)"><i class="ti ti-bell"></i><span data-i18n="nav_uy">UYARILAR</span><span class="nbdg nb-r">3</span></div>
+  <div class="ni" onclick="sv('set',this)"><i class="ti ti-settings"></i><span data-i18n="nav_set">AYARLAR</span></div>
+  <div class="sb-bot">
+    <div class="pt2" data-i18n="summary">Anlık Özet</div>
+    <div class="qs"><span class="ql" data-i18n="sum_rkb">Regal / Kat / Box</span><span class="qv">5/25/125</span></div>
+    <div class="qs"><span class="ql" data-i18n="sum_art">Toplam Artikel</span><span class="qv" style="color:var(--org);" id="sb-artc">12</span></div>
+    <div class="qs"><span class="ql" data-i18n="sum_low">Düşük Stok</span><span class="qv" style="color:var(--red);" id="sb-low">4</span></div>
+    <div class="qs"><span class="ql">MQTT Msg/dk</span><span class="qv" style="color:var(--grn);" id="sb-msg">0</span></div>
+  </div>
+</div>
+
+<div class="main" id="mainArea">
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dash">
+  <div class="mg">
+    <div class="mc"><div class="mcic ig"><i class="ti ti-package"></i></div><div class="mv" style="color:var(--org);" id="d-art">12</div><div class="ml" data-i18n="m_art">Aktif Artikel</div></div>
+    <div class="mc"><div class="mcic ib"><i class="ti ti-chart-pie"></i></div><div class="mv" style="color:var(--grn);">92.4%</div><div class="ml" data-i18n="m_fill">Stok Doluluk</div></div>
+    <div class="mc"><div class="mcic ir"><i class="ti ti-alert-triangle"></i></div><div class="mv" style="color:var(--red);">4</div><div class="ml" data-i18n="m_low">Düşük Stok</div></div>
+    <div class="mc"><div class="mcic io"><i class="ti ti-arrows-exchange"></i></div><div class="mv" style="color:var(--blu);">1.284</div><div class="ml" data-i18n="m_ops">Toplam İşlem</div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="rv_title">Regal Görünümü — Anlık</span></div>
+    <div class="cb"><div class="rv-wrap" id="regalVis"></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="card"><div class="ch"><i class="ti ti-trending-down" style="color:var(--red);"></i><span class="ct" data-i18n="low_title">Düşük / Kritik Stok</span></div><div class="cb" id="lowStockList"></div></div>
+    <div class="card"><div class="ch"><i class="ti ti-activity" style="color:var(--grn);"></i><span class="ct" data-i18n="recent_title">Son İşlemler</span></div><div class="cb" id="recentOps"></div></div>
+  </div>
+</div>
+
+<!-- REGAL YAPISI -->
+<div class="view" id="view-regal">
+  <div class="card"><div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="regal_title">Regal Yapı Yönetimi</span><button class="bo" onclick="alert(t('alert_addregal'))"><i class="ti ti-plus"></i><span data-i18n="btn_addregal">Regal Ekle</span></button></div><div class="cb" id="regalYapisi"></div></div>
+</div>
+
+<!-- ARTİKEL -->
+<div class="view" id="view-artikel">
+  <div style="display:flex;gap:7px;">
+    <input class="fi" id="artSrch" data-i18n-ph="art_search_ph" placeholder="HBE numarası veya ürün adı..." oninput="filterArt(this.value)" style="flex:1;">
+    <button class="bo" onclick="openArtModal()"><i class="ti ti-plus"></i><span data-i18n="btn_addart">Yeni Artikel Ekle</span></button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;" id="artGrid"></div>
+</div>
+
+<!-- LOADCELL -->
+<div class="view" id="view-lc">
+  <div class="mg">
+    <div class="mc"><div class="mcic ig"><i class="ti ti-weight"></i></div><div class="mv" style="color:var(--grn);">25</div><div class="ml" data-i18n="lc_active">Aktif Sensor</div></div>
+    <div class="mc"><div class="mcic ib"><i class="ti ti-target"></i></div><div class="mv" style="color:var(--blu);">±2g</div><div class="ml" data-i18n="lc_prec">Hassasiyet</div></div>
+    <div class="mc"><div class="mcic io"><i class="ti ti-percentage"></i></div><div class="mv" style="color:var(--org);">98.1%</div><div class="ml" data-i18n="lc_acc">Doğruluk</div></div>
+    <div class="mc"><div class="mcic ir"><i class="ti ti-tool"></i></div><div class="mv" style="color:var(--red);">1</div><div class="ml" data-i18n="lc_cal">Kalibrasyon</div></div>
+  </div>
+  <div class="card"><div class="ch"><i class="ti ti-weight" style="color:var(--org);"></i><span class="ct" data-i18n="lc_title">LoadCell Ağırlık Monitörü</span>
+  <select class="sel2" id="lcSel" onchange="renderLC()"><option value="0">Regal 1</option><option value="1">Regal 2</option><option value="2">Regal 3</option><option value="3">Regal 4</option><option value="4">Regal 5</option></select></div>
+  <div class="cb" id="lcBody"></div></div>
+</div>
+
+<!-- RFID -->
+<div class="view" id="view-rfid">
+  <div class="mg">
+    <div class="mc"><div class="mcic ig"><i class="ti ti-radio"></i></div><div class="mv" style="color:var(--grn);" id="rfid-actc">5</div><div class="ml" data-i18n="rf_active">Aktif Tag</div></div>
+    <div class="mc"><div class="mcic ir"><i class="ti ti-wifi-off"></i></div><div class="mv" style="color:var(--yel);" id="rfid-weakc">1</div><div class="ml" data-i18n="rf_weak">Zayıf</div></div>
+    <div class="mc"><div class="mcic io"><i class="ti ti-x"></i></div><div class="mv" style="color:var(--red);">0</div><div class="ml" data-i18n="rf_off">Çevrimdışı</div></div>
+    <div class="mc"><div class="mcic ib"><i class="ti ti-percentage"></i></div><div class="mv" style="color:var(--blu);">99.2%</div><div class="ml" data-i18n="rf_succ">Başarı</div></div>
+  </div>
+  <div class="card"><div class="ch"><i class="ti ti-radio" style="color:var(--org);"></i><span class="ct" data-i18n="rf_title">RFID Tag Listesi</span>
+  <button class="bo" onclick="openRfidModal()"><i class="ti ti-plus"></i><span data-i18n="btn_addrfid">Tag Ekle</span></button></div>
+  <div class="cb" id="rfidList"></div></div>
+</div>
+
+<!-- ESP32 -->
+<div class="view" id="view-esp">
+  <div class="card"><div class="ch"><i class="ti ti-device-tablet" style="color:var(--org);"></i><span class="ct" data-i18n="esp_title">ESP32 2" Ekran Önizlemeleri</span></div>
+  <div class="cb"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;" id="espGrid"></div></div></div>
+</div>
+
+<!-- MQTT -->
+<div class="view" id="view-mqtt">
+  <div class="mg">
+    <div class="mc"><div class="mcic ig"><i class="ti ti-antenna"></i></div><div class="mv" style="color:var(--grn);" id="mq-total">0</div><div class="ml" data-i18n="mq_total">Toplam Mesaj</div></div>
+    <div class="mc"><div class="mcic ib"><i class="ti ti-clock"></i></div><div class="mv" style="color:var(--blu);" id="mq-pm">0</div><div class="ml" data-i18n="mq_pm">Mesaj/Dk</div></div>
+    <div class="mc"><div class="mcic io"><i class="ti ti-chart-dots"></i></div><div class="mv" style="color:var(--org);">8</div><div class="ml" data-i18n="mq_topics">Aktif Topic</div></div>
+    <div class="mc"><div class="mcic ir"><i class="ti ti-alert-circle"></i></div><div class="mv" style="color:var(--yel);" id="mq-err">0</div><div class="ml" data-i18n="mq_errs">Hata</div></div>
+  </div>
+  <div class="card"><div class="ch"><i class="ti ti-terminal" style="color:var(--grn);"></i><span class="ct" data-i18n="mq_live">Canlı MQTT Akışı</span><div class="mqtt-pill"><span class="mqtt-dot"></span>mqtt.heuft.local:1883</div></div>
+  <div class="cb"><div class="mqtt-log" id="mqttLog"></div></div></div>
+</div>
+
+<!-- INVENTUR -->
+<div class="view" id="view-inv">
+  <div class="card"><div class="ch"><i class="ti ti-clipboard-check" style="color:var(--org);"></i><span class="ct" data-i18n="inv_title">İnventür Listesi</span></div>
+  <div class="cb" style="padding:0;"><table class="dt2"><thead><tr><th data-i18n="th_art">Artikel</th><th data-i18n="th_prod">Ürün</th><th data-i18n="th_sys">Sistem</th><th data-i18n="th_count">Sayım</th><th data-i18n="th_diff">Fark</th><th data-i18n="th_status">Durum</th></tr></thead><tbody id="invBody"></tbody></table></div></div>
+</div>
+
+<!-- STAT -->
+<div class="view" id="view-stat">
+  <div class="mg">
+    <div class="mc"><div class="mcic ig"><i class="ti ti-trending-up"></i></div><div class="mv" style="color:var(--grn);">2.318</div><div class="ml" data-i18n="st_in">Dönem Girişi</div></div>
+    <div class="mc"><div class="mcic ir"><i class="ti ti-trending-down"></i></div><div class="mv" style="color:var(--red);">1.934</div><div class="ml" data-i18n="st_out">Dönem Çıkışı</div></div>
+    <div class="mc"><div class="mcic io"><i class="ti ti-arrows-exchange"></i></div><div class="mv" style="color:var(--org);">4.252</div><div class="ml" data-i18n="st_total">Toplam İşlem</div></div>
+    <div class="mc"><div class="mcic ib"><i class="ti ti-plus-minus"></i></div><div class="mv" style="color:var(--blu);">+384</div><div class="ml" data-i18n="st_net">Net Değişim</div></div>
+  </div>
+  <div class="card"><div class="ch"><i class="ti ti-chart-bar" style="color:var(--org);"></i><span class="ct" data-i18n="st_chart">Stok Hareketi</span></div>
+  <div class="cb"><div style="position:relative;height:180px;"><canvas id="statChart"></canvas></div></div></div>
+</div>
+
+<!-- UYARILAR -->
+<div class="view" id="view-uy">
+  <div style="background:rgba(255,69,96,.06);border:1px solid rgba(255,69,96,.2);border-radius:8px;display:flex;gap:8px;padding:10px 12px;"><i class="ti ti-alert-triangle" style="color:var(--red);font-size:16px;"></i><div><div style="font-weight:600;">Kritik Stok: HBE010147</div><div style="font-size:10px;color:var(--txt3);">R1-K3-B2 · 3 adet kaldı</div></div></div>
+  <div style="background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.2);border-radius:8px;display:flex;gap:8px;padding:10px 12px;margin-top:8px;"><i class="ti ti-radio" style="color:var(--yel);font-size:16px;"></i><div><div style="font-weight:600;">RFID-R2-K1-B4 Zayıf Sinyal</div><div style="font-size:10px;color:var(--txt3);">-72 dBm</div></div></div>
+</div>
+
+<!-- SET -->
+<div class="view" id="view-set">
+  <div class="card"><div class="ch"><i class="ti ti-world" style="color:var(--org);"></i><span class="ct" data-i18n="lang_title">Dil Ayarları</span></div>
+  <div class="cb"><div class="langsw" style="width:fit-content;"><button class="langbtn on" id="lbTR2" onclick="setLang('tr')">Türkçe</button><button class="langbtn" id="lbDE2" onclick="setLang('de')">Deutsch</button></div></div></div>
+</div>
+
+</div>
+
+<div class="rp">
+  <div class="pt2" data-i18n="rp_feed">MQTT Canlı Feed</div>
+  <div style="background:var(--bg);border:1px solid var(--brd2);border-radius:7px;padding:8px;font-family:monospace;font-size:9px;height:110px;overflow-y:auto;display:flex;flex-direction:column-reverse;" id="rFeed"></div>
+  <div style="border-top:1px solid var(--brd);padding-top:10px;">
+    <div class="pt2">Raspberry Pi 4</div>
+    <div style="background:var(--bg);border:1px solid var(--brd2);border-radius:7px;padding:9px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;"><span style="color:var(--txt3);">CPU</span><span style="color:var(--grn);" id="rpi-cpu">18%</span></div><div class="pw"><div class="pb" style="width:18%;background:var(--grn);" id="rpi-cpu-b"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:5px;"><span style="color:var(--txt3);">RAM</span><span style="color:var(--yel);" id="rpi-ram">64%</span></div><div class="pw"><div class="pb" style="width:64%;background:var(--yel);" id="rpi-ram-b"></div></div>
+    </div>
+  </div>
+  <div style="border-top:1px solid var(--brd);padding-top:10px;">
+    <div class="pt2" data-i18n="rp_recent">Son Aktiviteler</div>
+    <div id="actList"></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ===== ARTİKEL MODAL ===== -->
+<div class="modal-bg" id="artModal">
+  <div class="modal-box">
+    <div class="m-title"><span data-i18n="am_title">Yeni Artikel Ekle</span><span class="m-x" onclick="closeArtModal()"><i class="ti ti-x"></i></span></div>
+    <div class="frow">
+      <div><div class="fl" data-i18n="am_no">Artikel No (HBE)</div><input class="fi" id="am_no" placeholder="HBE010XXX"></div>
+      <div><div class="fl" data-i18n="am_name">Ürün Adı</div><input class="fi" id="am_name" placeholder="Konveyör Bant Tutucusu"></div>
+    </div>
+    <div class="frow">
+      <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="am_maker" placeholder="HEUFT GmbH"></div>
+      <div><div class="fl" data-i18n="am_loc">Konum</div><input class="fi" id="am_loc" placeholder="R1-K1-B1"></div>
+    </div>
+    <div class="frow">
+      <div><div class="fl" data-i18n="am_unitw">Birim Ürün Ağırlığı (g)</div><input class="fi" type="number" id="am_unitw" placeholder="120" oninput="calcQty()"></div>
+      <div><div class="fl" data-i18n="am_boxw">Kutu Aktif Ağırlığı (g)</div><input class="fi" type="number" id="am_boxw" placeholder="5640" oninput="calcQty()"></div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;">
+      <i class="ti ti-calculator" style="color:var(--org);"></i>
+      <span data-i18n="am_calcqty">Hesaplanan Adet:</span>
+      <strong id="am_qtyResult" style="color:var(--org);font-size:14px;">0</strong>
+      <span style="color:var(--txt3);font-size:9px;" data-i18n="am_calcnote">(kutu ağırlığı ÷ birim ağırlık)</span>
+    </div>
+    <div class="frow">
+      <div class="upbox" onclick="document.getElementById('am_imgfile').click()">
+        <input type="file" id="am_imgfile" accept="image/*" style="display:none" onchange="previewUpload(this,'am_imgPrev','am_imgIcon')">
+        <img id="am_imgPrev"><i class="ti ti-photo" id="am_imgIcon"></i>
+        <span data-i18n="am_img">Ürün Resmi Yükle</span>
+      </div>
+      <div class="upbox" onclick="document.getElementById('am_qrfile').click()">
+        <input type="file" id="am_qrfile" accept="image/*" style="display:none" onchange="previewUpload(this,'am_qrPrev','am_qrIcon')">
+        <img id="am_qrPrev"><i class="ti ti-qrcode" id="am_qrIcon"></i>
+        <span data-i18n="am_qr">QR Kod Yükle</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="bd" onclick="closeArtModal()" data-i18n="btn_cancel">İptal</button>
+      <button class="bo" onclick="saveArtikel()"><i class="ti ti-check"></i><span data-i18n="btn_save">Kaydet</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RFID MODAL ===== -->
+<div class="modal-bg" id="rfidModal">
+  <div class="modal-box sm">
+    <div class="m-title"><span id="rfidModalTitle" data-i18n="rm_title">Yeni RFID Tag Ekle</span><span class="m-x" onclick="closeRfidModal()"><i class="ti ti-x"></i></span></div>
+    <input type="hidden" id="rf_editIdx" value="-1">
+    <div><div class="fl" data-i18n="rm_tagid">RFID Tag ID</div><input class="fi" id="rf_id" placeholder="RFID-R1-K1-B1"></div>
+    <div><div class="fl" data-i18n="rm_link">Bağlı Artikel</div><select class="fi" id="rf_art"></select></div>
+    <div class="frow">
+      <div><div class="fl" data-i18n="rm_loc">Regal Konumu</div><input class="fi" id="rf_loc" placeholder="R1-K1-B1"></div>
+      <div><div class="fl" data-i18n="rm_sig">Sinyal (dBm)</div><input class="fi" type="number" id="rf_sig" placeholder="-45"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="bd" onclick="closeRfidModal()" data-i18n="btn_cancel">İptal</button>
+      <button class="bo" onclick="saveRfid()"><i class="ti ti-check"></i><span data-i18n="btn_save">Kaydet</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RFID DETAIL MODAL ===== -->
+<div class="modal-bg" id="rfidDetailModal">
+  <div class="modal-box sm">
+    <div class="m-title"><span data-i18n="rd_title">RFID Detayı</span><span class="m-x" onclick="document.getElementById('rfidDetailModal').classList.remove('open')"><i class="ti ti-x"></i></span></div>
+    <div id="rfidDetailBody" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="bd" id="rd_editBtn" data-i18n="btn_edit">Düzenle</button>
+      <button class="br" id="rd_delBtn" data-i18n="btn_delete">Sil</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-circle-check"></i><span id="toastMsg">OK</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+/* ===== i18n.js (inlined) ===== */
+const I18N = {
+tr:{
+  sys_sub:"Akıllı Depo Yönetim", t_sys:"Sistem", t_active:"Aktif",
+  nav_main:"Ana Modüller", nav_dash:"DASHBOARD", nav_regal:"REGAL YAPISI", nav_art:"ARTİKEL / ÜRÜN",
+  nav_lc:"AĞIRLIK / LOADCELL", nav_rfid:"RFID YÖNETİM", nav_ctrl:"Kontrol", nav_esp:"ESP32 EKRANLAR",
+  nav_mqtt:"MQTT MONITOR", nav_inv:"İNVENTUR", nav_rep:"Raporlama", nav_stat:"İSTATİSTİKLER",
+  nav_uy:"UYARILAR", nav_set:"AYARLAR",
+  summary:"Anlık Özet", sum_rkb:"Regal / Kat / Box", sum_art:"Toplam Artikel", sum_low:"Düşük Stok",
+  m_art:"Aktif Artikel", m_fill:"Stok Doluluk", m_low:"Düşük Stok", m_ops:"Toplam İşlem",
+  rv_title:"Regal Görünümü — Anlık", low_title:"Düşük / Kritik Stok", recent_title:"Son İşlemler",
+  regal_title:"Regal Yapı Yönetimi", btn_addregal:"Regal Ekle", alert_addregal:"Yeni regal eklendi (demo)",
+  art_search_ph:"HBE numarası veya ürün adı...", btn_addart:"Yeni Artikel Ekle",
+  lc_active:"Aktif Sensor", lc_prec:"Hassasiyet", lc_acc:"Doğruluk", lc_cal:"Kalibrasyon", lc_title:"LoadCell Ağırlık Monitörü",
+  rf_active:"Aktif Tag", rf_weak:"Zayıf", rf_off:"Çevrimdışı", rf_succ:"Başarı", rf_title:"RFID Tag Listesi", btn_addrfid:"Tag Ekle",
+  esp_title:"ESP32 2\" Ekran Önizlemeleri",
+  mq_total:"Toplam Mesaj", mq_pm:"Mesaj/Dk", mq_topics:"Aktif Topic", mq_errs:"Hata", mq_live:"Canlı MQTT Akışı",
+  inv_title:"İnventür Listesi", th_art:"Artikel", th_prod:"Ürün", th_sys:"Sistem", th_count:"Sayım", th_diff:"Fark", th_status:"Durum",
+  st_in:"Dönem Girişi", st_out:"Dönem Çıkışı", st_total:"Toplam İşlem", st_net:"Net Değişim", st_chart:"Stok Hareketi",
+  lang_title:"Dil Ayarları", rp_feed:"MQTT Canlı Feed", rp_recent:"Son Aktiviteler",
+  am_title:"Yeni Artikel Ekle", am_no:"Artikel No (HBE)", am_name:"Ürün Adı", am_maker:"Üretici", am_loc:"Konum",
+  am_unitw:"Birim Ürün Ağırlığı (g)", am_boxw:"Kutu Aktif Ağırlığı (g)", am_calcqty:"Hesaplanan Adet:",
+  am_calcnote:"(kutu ağırlığı ÷ birim ağırlık)", am_img:"Ürün Resmi Yükle", am_qr:"QR Kod Yükle",
+  rm_title:"Yeni RFID Tag Ekle", rm_title_edit:"RFID Tag Düzenle", rm_tagid:"RFID Tag ID", rm_link:"Bağlı Artikel", rm_loc:"Regal Konumu", rm_sig:"Sinyal (dBm)",
+  rd_title:"RFID Detayı", btn_cancel:"İptal", btn_save:"Kaydet", btn_edit:"Düzenle", btn_delete:"Sil",
+  toast_artadded:"Artikel başarıyla eklendi!", toast_rfidadded:"RFID tag eklendi!", toast_rfidupdated:"RFID tag güncellendi!", toast_rfiddeleted:"RFID tag silindi!",
+  rd_linkedart:"Bağlı Ürün", rd_locinfo:"Regal Konumu", rd_signal:"Sinyal Gücü", rd_status:"Durum",
+  confirm_delete:"Bu RFID tag'i silmek istediğinize emin misiniz?", err_required:"Lütfen gerekli alanları doldurun!",
+  stokta:"Stokta", dusuk:"Düşük", kritik:"Kritik", aktif:"Aktif", zayif:"Zayıf"
+},
+de:{
+  sys_sub:"Intelligente Lagerverwaltung", t_sys:"System", t_active:"Aktiv",
+  nav_main:"Hauptmodule", nav_dash:"DASHBOARD", nav_regal:"REGALSTRUKTUR", nav_art:"ARTIKEL / PRODUKT",
+  nav_lc:"GEWICHT / LOADCELL", nav_rfid:"RFID-VERWALTUNG", nav_ctrl:"Steuerung", nav_esp:"ESP32-DISPLAYS",
+  nav_mqtt:"MQTT-MONITOR", nav_inv:"INVENTUR", nav_rep:"Berichte", nav_stat:"STATISTIKEN",
+  nav_uy:"WARNUNGEN", nav_set:"EINSTELLUNGEN",
+  summary:"Aktuelle Übersicht", sum_rkb:"Regal / Ebene / Box", sum_art:"Artikel gesamt", sum_low:"Niedriger Bestand",
+  m_art:"Aktive Artikel", m_fill:"Lagerauslastung", m_low:"Niedriger Bestand", m_ops:"Transaktionen gesamt",
+  rv_title:"Regalansicht — Live", low_title:"Niedriger / Kritischer Bestand", recent_title:"Letzte Transaktionen",
+  regal_title:"Regalstruktur-Verwaltung", btn_addregal:"Regal hinzufügen", alert_addregal:"Neues Regal hinzugefügt (Demo)",
+  art_search_ph:"HBE-Nummer oder Produktname...", btn_addart:"Neuen Artikel hinzufügen",
+  lc_active:"Aktive Sensoren", lc_prec:"Genauigkeit", lc_acc:"Präzision", lc_cal:"Kalibrierung", lc_title:"LoadCell-Gewichtsmonitor",
+  rf_active:"Aktive Tags", rf_weak:"Schwach", rf_off:"Offline", rf_succ:"Erfolgsrate", rf_title:"RFID-Tag-Liste", btn_addrfid:"Tag hinzufügen",
+  esp_title:"ESP32 2\"-Display-Vorschau",
+  mq_total:"Nachrichten gesamt", mq_pm:"Nachrichten/Min", mq_topics:"Aktive Topics", mq_errs:"Fehler", mq_live:"Live-MQTT-Stream",
+  inv_title:"Inventurliste", th_art:"Artikel", th_prod:"Produkt", th_sys:"System", th_count:"Zählung", th_diff:"Differenz", th_status:"Status",
+  st_in:"Zugänge (Periode)", st_out:"Abgänge (Periode)", st_total:"Transaktionen gesamt", st_net:"Nettoveränderung", st_chart:"Bestandsbewegung",
+  lang_title:"Spracheinstellungen", rp_feed:"MQTT-Live-Feed", rp_recent:"Letzte Aktivitäten",
+  am_title:"Neuen Artikel hinzufügen", am_no:"Artikelnummer (HBE)", am_name:"Produktname", am_maker:"Hersteller", am_loc:"Standort",
+  am_unitw:"Einzelgewicht des Produkts (g)", am_boxw:"Aktives Boxgewicht (g)", am_calcqty:"Berechnete Menge:",
+  am_calcnote:"(Boxgewicht ÷ Einzelgewicht)", am_img:"Produktbild hochladen", am_qr:"QR-Code hochladen",
+  rm_title:"Neues RFID-Tag hinzufügen", rm_title_edit:"RFID-Tag bearbeiten", rm_tagid:"RFID-Tag-ID", rm_link:"Verknüpfter Artikel", rm_loc:"Regalposition", rm_sig:"Signal (dBm)",
+  rd_title:"RFID-Details", btn_cancel:"Abbrechen", btn_save:"Speichern", btn_edit:"Bearbeiten", btn_delete:"Löschen",
+  toast_artadded:"Artikel erfolgreich hinzugefügt!", toast_rfidadded:"RFID-Tag hinzugefügt!", toast_rfidupdated:"RFID-Tag aktualisiert!", toast_rfiddeleted:"RFID-Tag gelöscht!",
+  rd_linkedart:"Verknüpftes Produkt", rd_locinfo:"Regalposition", rd_signal:"Signalstärke", rd_status:"Status",
+  confirm_delete:"Möchten Sie dieses RFID-Tag wirklich löschen?", err_required:"Bitte füllen Sie die Pflichtfelder aus!",
+  stokta:"Vorhanden", dusuk:"Niedrig", kritik:"Kritisch", aktif:"Aktiv", zayif:"Schwach"
+}
+};
+let curLang = 'tr';
+function t(key){ return (I18N[curLang] && I18N[curLang][key]) || key; }
+function applyI18n(){
+  document.documentElement.lang = curLang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.getAttribute('data-i18n');
+    if(I18N[curLang][k]) el.textContent = I18N[curLang][k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const k = el.getAttribute('data-i18n-ph');
+    if(I18N[curLang][k]) el.placeholder = I18N[curLang][k];
+  });
+  if(typeof renderArt==='function') renderArt(window.ARTS||[]);
+  if(typeof renderRfidList==='function') renderRfidList();
+  if(typeof renderInv==='function') renderInv();
+  if(typeof renderLowStock==='function') renderLowStock();
+}
+function setLang(l){
+  curLang = l;
+  ['lbTR','lbDE','lbTR2','lbDE2'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const isOn = (id.includes('TR') && l==='tr') || (id.includes('DE') && l==='de');
+    el.classList.toggle('on', isOn);
+  });
+  applyI18n();
+}
+</script>
+<script>
+/* ===== app.js (inlined) ===== */
+/* ===== NAV ===== */
+function sv(id,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+/* ===== CLOCK ===== */
+setInterval(()=>{const n=new Date();document.getElementById('clk').textContent=n.getDate().toString().padStart(2,'0')+'.'+(n.getMonth()+1).toString().padStart(2,'0')+'.'+n.getFullYear()+' · '+n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');},10000);
+
+/* ===== LOGO UPLOAD ===== */
+function handleLogoFile(input){
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    document.getElementById('logoImg').src=e.target.result;
+    document.getElementById('logoImg').style.display='block';
+    document.getElementById('defIcon').style.display='none';
+    showToast('Logo güncellendi!');
+  };
+  r.readAsDataURL(f);
+}
+
+/* ===== TOAST ===== */
+let toastTimer=null;
+function showToast(msg){
+  clearTimeout(toastTimer);
+  const el=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  el.classList.add('show');
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+/* ===== DATA STORE ===== */
+window.ARTS=[
+  {no:'HBE010223',n:'Konveyör Bant Tutucusu',maker:'HEUFT GmbH',loc:'R2-K3-B1',unitw:120,boxw:5640,qty:47,st:'ok',img:'',qr:''},
+  {no:'HBE010147',n:'Geçen Tutucu',maker:'HEUFT GmbH',loc:'R1-K3-B2',unitw:85,boxw:255,qty:3,st:'crit',img:'',qr:''},
+  {no:'HBE010089',n:'V-Kayış 8mm',maker:'Contitech',loc:'R3-K5-B1',unitw:45,boxw:540,qty:12,st:'low',img:'',qr:''},
+  {no:'HBE010312',n:'Konveyör Rulosu Ø50',maker:'HEUFT GmbH',loc:'R4-K2-B3',unitw:380,boxw:10640,qty:28,st:'ok',img:'',qr:''},
+  {no:'HBE010445',n:'Tahrik Zinciri 3/8"',maker:'Renold',loc:'R5-K1-B2',unitw:230,boxw:14950,qty:65,st:'ok',img:'',qr:''},
+  {no:'HBE009180',n:'Fotosel Verici',maker:'Sick AG',loc:'R1-K4-B2',unitw:156,boxw:5304,qty:34,st:'ok',img:'',qr:''},
+  {no:'HBE009234',n:'Konveyör Rulosu Ø40',maker:'HEUFT GmbH',loc:'R2-K1-B4',unitw:290,boxw:2320,qty:8,st:'low',img:'',qr:''},
+  {no:'HBE009412',n:'Fotosel Lens',maker:'Sick AG',loc:'R1-K2-B3',unitw:78,boxw:78,qty:1,st:'crit',img:'',qr:''},
+  {no:'HBE009301',n:'Encoder Diski',maker:'Baumer',loc:'R3-K4-B2',unitw:445,boxw:9790,qty:22,st:'ok',img:'',qr:''},
+  {no:'HBE009508',n:'Pnömatik Silindir',maker:'Festo',loc:'R4-K3-B1',unitw:820,boxw:7380,qty:9,st:'ok',img:'',qr:''},
+  {no:'HBE010587',n:'Dişli Kasnak 20T',maker:'HEUFT GmbH',loc:'R2-K4-B2',unitw:195,boxw:6045,qty:31,st:'ok',img:'',qr:''},
+  {no:'HBE009634',n:'Motor Kaplingi',maker:'KTR',loc:'R5-K2-B4',unitw:680,boxw:9520,qty:14,st:'ok',img:'',qr:''},
+];
+window.RFIDS=[
+  {id:'RFID-R1-K1-B1',art:'HBE010223',loc:'R1-K1-B1',sig:-42,st:'aktif'},
+  {id:'RFID-R1-K1-B2',art:'HBE010445',loc:'R1-K1-B2',sig:-48,st:'aktif'},
+  {id:'RFID-R1-K2-B3',art:'HBE009412',loc:'R1-K2-B3',sig:-51,st:'aktif'},
+  {id:'RFID-R2-K1-B4',art:'HBE009234',loc:'R2-K1-B4',sig:-72,st:'zayif'},
+  {id:'RFID-R3-K3-B2',art:'HBE010147',loc:'R3-K3-B2',sig:-44,st:'aktif'},
+];
+
+/* ===== REGAL VIS (dashboard) ===== */
+const RD=[
+  {n:'R1',kats:[[{s:'f'},{s:'f'},{s:'m'},{s:'f'},{s:'l'}],[{s:'f'},{s:'f'},{s:'f'},{s:'e'},{s:'f'}],[{s:'m'},{s:'f'},{s:'a'},{s:'f'},{s:'f'}],[{s:'f'},{s:'l'},{s:'f'},{s:'f'},{s:'m'}],[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'f'}]],light:true},
+  {n:'R2',kats:[[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'m'}],[{s:'m'},{s:'f'},{s:'f'},{s:'l'},{s:'f'}],[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'e'}],[{s:'f'},{s:'f'},{s:'m'},{s:'f'},{s:'f'}],[{s:'l'},{s:'f'},{s:'f'},{s:'f'},{s:'f'}]],light:true},
+  {n:'R3',kats:[[{s:'f'},{s:'m'},{s:'f'},{s:'f'},{s:'f'}],[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'f'}],[{s:'m'},{s:'f'},{s:'f'},{s:'m'},{s:'f'}],[{s:'f'},{s:'f'},{s:'e'},{s:'f'},{s:'l'}],[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'f'}]],light:false},
+  {n:'R4',kats:[[{s:'f'},{s:'f'},{s:'f'},{s:'m'},{s:'f'}],[{s:'f'},{s:'a'},{s:'f'},{s:'f'},{s:'f'}],[{s:'m'},{s:'f'},{s:'f'},{s:'f'},{s:'e'}],[{s:'f'},{s:'f'},{s:'f'},{s:'l'},{s:'f'}],[{s:'f'},{s:'f'},{s:'m'},{s:'f'},{s:'f'}]],light:true},
+  {n:'R5',kats:[[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'f'}],[{s:'f'},{s:'m'},{s:'f'},{s:'f'},{s:'f'}],[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'m'}],[{s:'e'},{s:'f'},{s:'f'},{s:'f'},{s:'f'}],[{s:'f'},{s:'f'},{s:'f'},{s:'f'},{s:'l'}]],light:true},
+];
+const bCls={f:'bf',m:'bm',l:'bl',e:'be',a:'ba'};
+function renderRegalVis(){
+  const rv=document.getElementById('regalVis'); rv.innerHTML='';
+  RD.forEach(r=>{
+    const ru=document.createElement('div'); ru.className='ru';
+    ru.innerHTML=`<div class="ru-t">${r.n}</div>`;
+    r.kats.forEach((kat,ki)=>{
+      const kr=document.createElement('div'); kr.className='kat-r';
+      kr.innerHTML=`<div class="kl">K${ki+1}</div>`;
+      kat.forEach((b,bi)=>{const bs=document.createElement('div');bs.className=`bslot ${bCls[b.s]}`;bs.title=`${r.n}-K${ki+1}-B${bi+1}`;kr.appendChild(bs);});
+      ru.appendChild(kr);
+    });
+    const lb=document.createElement('div'); lb.className=`lbar ${r.light?'lon':'loff'}`; ru.appendChild(lb);
+    rv.appendChild(ru);
+  });
+}
+
+/* ===== REGAL YAPISI ===== */
+function renderRegalYapisi(){
+  const ry=document.getElementById('regalYapisi'); ry.innerHTML='';
+  RD.forEach(r=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:8px;padding:9px;background:var(--bg4);border-radius:8px;border:1px solid var(--brd2);margin-bottom:7px;';
+    d.innerHTML=`<i class="ti ti-server" style="color:var(--org);"></i><span style="font-weight:600;flex:1;">${r.n} — 5 Kat · 25 Box</span>
+      ${r.kats.map((k,ki)=>`<div class="bslot ${bCls[k[0].s]}" style="width:14px;height:14px;" title="K${ki+1}"></div>`).join('')}`;
+    ry.appendChild(d);
+  });
+}
+
+/* ===== ARTİKEL: render, filter, status helpers ===== */
+function stTag(s){
+  const map={ok:['tok','stokta'],low:['tw','dusuk'],crit:['te','kritik']};
+  const [cls,key]=map[s];
+  return `<span class="tag ${cls}">${t(key)}</span>`;
+}
+function renderArt(data){
+  document.getElementById('artGrid').innerHTML=data.map(a=>`
+    <div style="background:var(--bg4);border:1px solid var(--brd2);border-radius:9px;padding:10px;cursor:pointer;">
+      <div style="height:48px;background:var(--bg5);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:7px;border:1px solid var(--brd);overflow:hidden;">
+        ${a.img?`<img src="${a.img}" style="width:100%;height:100%;object-fit:cover;">`:`<i class="ti ti-package" style="font-size:18px;color:var(--bg4);"></i>`}
+      </div>
+      <div style="font-size:10px;font-weight:700;color:var(--org);">${a.no}</div>
+      <div style="font-size:10px;color:var(--txt2);">${a.n}</div>
+      <div style="font-size:9px;color:var(--txt3);">${a.maker} · ${a.loc}</div>
+      <div style="font-size:9px;color:var(--txt3);">${a.unitw}g/ad · ${(a.boxw/1000).toFixed(2)}kg ${t('th_count')==='Sayım'?'kutu':'Box'}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
+        <span style="font-size:13px;font-weight:700;">${a.qty}</span>${stTag(a.st)}
+      </div>
+      ${a.qr?`<div style="margin-top:5px;text-align:center;"><img src="${a.qr}" style="height:28px;"></div>`:''}
+    </div>`).join('');
+  document.getElementById('sb-artc').textContent=window.ARTS.length;
+  document.getElementById('d-art').textContent=window.ARTS.length;
+}
+function filterArt(q){
+  renderArt(window.ARTS.filter(a=>a.no.toLowerCase().includes(q.toLowerCase())||a.n.toLowerCase().includes(q.toLowerCase())));
+}
+function renderLowStock(){
+  document.getElementById('lowStockList').innerHTML=window.ARTS.filter(a=>a.st!=='ok').map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 9px;background:var(--bg4);border-radius:7px;border:1px solid var(--brd2);margin-bottom:6px;">
+      <div><div style="font-weight:600;">${a.no}</div><div style="font-size:9px;color:var(--txt3);">${a.loc} · ${a.n}</div></div>
+      ${stTag(a.st)}
+    </div>`).join('');
+  document.getElementById('sb-low').textContent=window.ARTS.filter(a=>a.st!=='ok').length;
+}
+
+/* ===== ARTİKEL MODAL: add with weight->qty calc + image/qr upload ===== */
+function openArtModal(){
+  document.getElementById('artModal').classList.add('open');
+  ['am_no','am_name','am_maker','am_loc','am_unitw','am_boxw'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('am_qtyResult').textContent='0';
+  resetUploadBox('am_imgPrev','am_imgIcon');
+  resetUploadBox('am_qrPrev','am_qrIcon');
+}
+function closeArtModal(){ document.getElementById('artModal').classList.remove('open'); }
+function calcQty(){
+  const uw=parseFloat(document.getElementById('am_unitw').value)||0;
+  const bw=parseFloat(document.getElementById('am_boxw').value)||0;
+  const qty = uw>0 ? Math.round(bw/uw) : 0;
+  document.getElementById('am_qtyResult').textContent=qty;
+}
+function previewUpload(input,imgId,iconId){
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const img=document.getElementById(imgId); img.src=e.target.result; img.style.display='block';
+    document.getElementById(iconId).style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+function resetUploadBox(imgId,iconId){
+  document.getElementById(imgId).style.display='none';
+  document.getElementById(imgId).src='';
+  document.getElementById(iconId).style.display='block';
+}
+function saveArtikel(){
+  const no=document.getElementById('am_no').value.trim();
+  const name=document.getElementById('am_name').value.trim();
+  const maker=document.getElementById('am_maker').value.trim()||'—';
+  const loc=document.getElementById('am_loc').value.trim()||'—';
+  const unitw=parseFloat(document.getElementById('am_unitw').value)||0;
+  const boxw=parseFloat(document.getElementById('am_boxw').value)||0;
+  if(!no||!name){ showToast(t('err_required')); return; }
+  const qty = unitw>0 ? Math.round(boxw/unitw) : 0;
+  const st = qty<=2 ? 'crit' : qty<15 ? 'low' : 'ok';
+  window.ARTS.push({no,n:name,maker,loc,unitw,boxw,qty,st,img:document.getElementById('am_imgPrev').src||'',qr:document.getElementById('am_qrPrev').src||''});
+  renderArt(window.ARTS);
+  renderLowStock();
+  populateRfidArtSelect();
+  closeArtModal();
+  showToast(t('toast_artadded'));
+}
+
+/* ===== RFID: render, add, edit, delete, detail ===== */
+function sigBar(d){
+  const l=d>-55?4:d>-65?3:d>-75?2:1; const c=l>=3?'var(--grn)':'var(--yel)';
+  return `<div style="display:flex;gap:2px;align-items:flex-end;height:13px;">${[9,12,16,20].map((h,i)=>`<div style="width:3px;height:${h}px;border-radius:1px;background:${i<l?c:'rgba(255,255,255,.08)'}"></div>`).join('')}</div>`;
+}
+function findArt(no){ return window.ARTS.find(a=>a.no===no); }
+function renderRfidList(){
+  document.getElementById('rfidList').innerHTML=window.RFIDS.map((r,i)=>{
+    const art=findArt(r.art);
+    return `<div class="rfid-r" onclick="showRfidDetail(${i})">
+      <i class="ti ti-radio" style="color:${r.st==='aktif'?'var(--grn)':'var(--yel)'};font-size:14px;"></i>
+      <div style="flex:1;"><div style="font-weight:600;">${r.id}</div><div style="font-size:9px;color:var(--txt3);">${r.art}${art?' · '+art.n:''} · ${r.sig} dBm</div></div>
+      ${sigBar(r.sig)}<span class="tag ${r.st==='aktif'?'tok':'tw'}" style="margin-left:5px;">${t(r.st)}</span>
+      <button class="iconbtn" style="margin-left:6px;" onclick="event.stopPropagation();openRfidModal(${i})"><i class="ti ti-pencil"></i></button>
+      <button class="iconbtn" onclick="event.stopPropagation();deleteRfid(${i})"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+  document.getElementById('rfid-actc').textContent=window.RFIDS.filter(r=>r.st==='aktif').length;
+  document.getElementById('rfid-weakc').textContent=window.RFIDS.filter(r=>r.st==='zayif').length;
+}
+function populateRfidArtSelect(){
+  const sel=document.getElementById('rf_art');
+  sel.innerHTML=window.ARTS.map(a=>`<option value="${a.no}">${a.no} — ${a.n}</option>`).join('');
+}
+function openRfidModal(idx){
+  populateRfidArtSelect();
+  document.getElementById('rf_editIdx').value = idx===undefined ? -1 : idx;
+  document.getElementById('rfidModalTitle').textContent = idx===undefined ? t('rm_title') : t('rm_title_edit');
+  if(idx!==undefined){
+    const r=window.RFIDS[idx];
+    document.getElementById('rf_id').value=r.id;
+    document.getElementById('rf_art').value=r.art;
+    document.getElementById('rf_loc').value=r.loc;
+    document.getElementById('rf_sig').value=r.sig;
+  } else {
+    document.getElementById('rf_id').value='';
+    document.getElementById('rf_loc').value='';
+    document.getElementById('rf_sig').value='';
+  }
+  document.getElementById('rfidModal').classList.add('open');
+}
+function closeRfidModal(){ document.getElementById('rfidModal').classList.remove('open'); }
+function saveRfid(){
+  const idx=parseInt(document.getElementById('rf_editIdx').value);
+  const id=document.getElementById('rf_id').value.trim();
+  const art=document.getElementById('rf_art').value;
+  const loc=document.getElementById('rf_loc').value.trim();
+  const sig=parseFloat(document.getElementById('rf_sig').value)||-50;
+  if(!id||!art){ showToast(t('err_required')); return; }
+  const st = sig > -65 ? 'aktif' : 'zayif';
+  if(idx>=0){
+    window.RFIDS[idx]={id,art,loc,sig,st};
+    showToast(t('toast_rfidupdated'));
+  } else {
+    window.RFIDS.push({id,art,loc,sig,st});
+    showToast(t('toast_rfidadded'));
+  }
+  renderRfidList();
+  closeRfidModal();
+}
+function deleteRfid(idx){
+  if(!confirm(t('confirm_delete'))) return;
+  window.RFIDS.splice(idx,1);
+  renderRfidList();
+  showToast(t('toast_rfiddeleted'));
+}
+function showRfidDetail(idx){
+  const r=window.RFIDS[idx]; const art=findArt(r.art);
+  document.getElementById('rfidDetailBody').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--bg);border-radius:8px;border:1px solid var(--brd2);">
+      <i class="ti ti-radio" style="font-size:22px;color:${r.st==='aktif'?'var(--grn)':'var(--yel)'};"></i>
+      <div><div style="font-weight:700;">${r.id}</div><div style="font-size:9px;color:var(--txt3);">${r.sig} dBm</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;">
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_linkedart')}</span><strong>${r.art}${art?' — '+art.n:''}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_locinfo')}</span><strong>${r.loc}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_signal')}</span><strong>${r.sig} dBm</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_status')}</span>${stTag(r.st==='aktif'?'ok':'low')}</div>
+      ${art?`<div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">Stok</span><strong>${art.qty} adet</strong></div>`:''}
+    </div>`;
+  document.getElementById('rd_editBtn').onclick=()=>{document.getElementById('rfidDetailModal').classList.remove('open');openRfidModal(idx);};
+  document.getElementById('rd_delBtn').onclick=()=>{document.getElementById('rfidDetailModal').classList.remove('open');deleteRfid(idx);};
+  document.getElementById('rfidDetailModal').classList.add('open');
+}
+
+/* ===== LOADCELL ===== */
+const LCW=[[1240,380,2200,890,1560],[890,2340,1120,450,0],[2100,780,1890,2300,640],[1560,1200,920,1740,2100],[830,1960,1430,760,2200]];
+function renderLC(){
+  const ri=parseInt(document.getElementById('lcSel').value);
+  const el=document.getElementById('lcBody'); el.innerHTML='';
+  LCW.forEach((kat,ki)=>{
+    const d=document.createElement('div');
+    d.innerHTML=`<div style="font-weight:600;color:var(--txt2);margin-bottom:6px;">Kat ${ki+1}</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">${kat.map((w,i)=>{
+      const pct=w>0?Math.min(100,Math.round(w/2400*100)):0;
+      const clr=pct>60?'var(--org)':pct>30?'var(--yel)':pct>0?'var(--red)':'#333';
+      return `<div style="background:var(--bg4);border:1px solid var(--brd2);border-radius:7px;padding:7px;text-align:center;">
+        <div style="font-size:8px;color:var(--txt3);">B${i+1}</div>
+        <div style="font-size:12px;font-weight:700;color:${clr}">${(w/1000).toFixed(2)}kg</div>
+        <div style="height:38px;background:var(--bg5);border-radius:3px;margin-top:4px;display:flex;align-items:flex-end;overflow:hidden;"><div style="width:100%;height:${pct}%;background:${clr};"></div></div>
+      </div>`;}).join('')}</div>`;
+    el.appendChild(d);
+  });
+}
+
+/* ===== ESP32 ===== */
+const ESPD=[{art:'HBE010223',w:'1.24kg',q:10,s:'ok'},{art:'HBE010445',w:'2.34kg',q:10,s:'ok'},{art:'HBE009412',w:'0.08kg',q:1,s:'err'},{art:'HBE010312',w:'0.89kg',q:2,s:'warn'},{art:'HBE009180',w:'1.56kg',q:10,s:'ok'}];
+function renderEsp(){
+  document.getElementById('espGrid').innerHTML=ESPD.map(e=>`
+    <div style="background:#050710;border:1.5px solid var(--org);border-radius:8px;padding:8px;position:relative;">
+      <div style="position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:${e.s==='ok'?'var(--grn)':e.s==='warn'?'var(--yel)':'var(--red)'}"></div>
+      <div style="background:#020310;border-radius:4px;padding:6px;text-align:center;">
+        <div style="font-size:7px;color:var(--org);font-weight:700;">HEUFT</div>
+        <div style="font-size:9px;color:#fff;font-weight:600;margin:2px 0;">${e.art}</div>
+        <div style="font-size:12px;font-weight:800;color:var(--org);">${e.w}</div>
+        <div style="font-size:9px;color:${e.s==='ok'?'var(--grn)':e.s==='warn'?'var(--yel)':'var(--red)'};">${e.q} ad</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===== INVENTUR ===== */
+function renderInv(){
+  document.getElementById('invBody').innerHTML=window.ARTS.slice(0,8).map(a=>{
+    const diff=Math.floor(Math.random()*5)-2; const cnt=a.qty+diff;
+    return `<tr>
+      <td style="color:var(--org);font-weight:700;">${a.no}</td><td>${a.n}</td>
+      <td style="font-weight:600;">${a.qty}</td><td style="color:${Math.abs(diff)>1?'var(--red)':'var(--txt2)'};">${cnt}</td>
+      <td style="font-weight:600;color:${diff!==0?'var(--yel)':'var(--grn)'};">${diff>0?'+':''}${diff}</td>
+      <td>${diff===0?'<span class="tag tok">✓</span>':'<span class="tag tw">≠</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===== CHART ===== */
+function renderChart(){
+  try{
+    new Chart(document.getElementById('statChart'),{type:'bar',data:{labels:['Pzt','Sal','Çar','Per','Cum','Cmt','Paz','Pzt','Sal','Çar','Per','Cum'],datasets:[
+      {label:'Giriş',data:[42,67,53,81,49,28,14,58,72,61,88,54],backgroundColor:'rgba(255,85,0,.75)',borderRadius:3},
+      {label:'Çıkış',data:[31,52,44,68,38,19,8,46,59,48,71,43],backgroundColor:'rgba(77,157,255,.55)',borderRadius:3},
+      {label:'Net',data:[11,15,9,13,11,9,6,12,13,13,17,11],type:'line',borderColor:'#0fdb7e',borderWidth:2,pointRadius:2,tension:.4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5a6380',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#5a6380',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}}}});
+  }catch(e){ console.warn('Chart.js yüklenemedi (internet bağlantısı gerekli):',e); }
+}
+
+/* ===== MQTT SIM ===== */
+let mqCnt=0,mqPM=0;
+const TSIM=['heuft/regal/R1/K1/B1/weight','heuft/regal/R2/K3/B2/rfid','heuft/system/status','heuft/esp32/R1/display','heuft/pc/sync'];
+const PSIM=[()=>`{"weight":${(Math.random()*3000).toFixed(0)},"qty":${Math.floor(Math.random()*30)}}`,()=>`{"tag":"HBE0${Math.random()>0.5?10:9}${Math.floor(Math.random()*900+100)}","rssi":${Math.floor(Math.random()*30-80)}}`,()=>`{"cpu":${Math.floor(Math.random()*40+10)},"temp":${Math.floor(Math.random()*15+42)}}`,()=>`{"art":"HBE010${Math.floor(Math.random()*900+100)}","weight":"${(Math.random()*3).toFixed(2)}kg"}`,()=>`{"records":${Math.floor(Math.random()*100+200)},"status":"ok"}`];
+const ACT=['<strong>HBE010223</strong> giriş +12 adet','RFID okuma başarılı','LoadCell güncellendi','<strong>HBE010445</strong> çıkış -8 adet'];
+const ACT_CLR=['var(--grn)','var(--org)','var(--blu)','var(--yel)'];
+let actRows=[];
+function addMQTT(){
+  const idx=Math.floor(Math.random()*TSIM.length); const tpc=TSIM[idx],p=PSIM[idx]();
+  const now=new Date(); const ts=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')+':'+now.getSeconds().toString().padStart(2,'0');
+  mqCnt++; mqPM++;
+  document.getElementById('tb-mqc').textContent=mqCnt;
+  document.getElementById('mq-total').textContent=mqCnt;
+  document.getElementById('mq-pm').textContent=mqPM;
+  document.getElementById('sb-msg').textContent=mqPM;
+  const mqLog=document.getElementById('mqttLog');
+  const row=document.createElement('div'); row.className='ml-row';
+  row.innerHTML=`<span class="ml-time">${ts}</span><span class="ml-topic">${tpc}</span><span class="ml-payload">${p}</span>`;
+  mqLog.prepend(row); if(mqLog.children.length>40) mqLog.lastChild&&mqLog.removeChild(mqLog.lastChild);
+  const rF=document.getElementById('rFeed');
+  const fr=document.createElement('div'); fr.style.cssText='padding:1px 0;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:5px;';
+  fr.innerHTML=`<span style="color:var(--txt3);font-size:8px;">${ts}</span><span style="color:var(--cyan);font-size:8px;overflow:hidden;white-space:nowrap;flex:1;">${tpc.replace('heuft/','')}</span>`;
+  rF.prepend(fr); if(rF.children.length>20) rF.lastChild&&rF.removeChild(rF.lastChild);
+  if(Math.random()<0.25){
+    const at=ACT[Math.floor(Math.random()*ACT.length)]; const cl=ACT_CLR[Math.floor(Math.random()*ACT_CLR.length)];
+    const al=document.getElementById('actList');
+    const ar=document.createElement('div'); ar.className='actr';
+    ar.innerHTML=`<div class="acd" style="background:${cl}"></div><div class="act">${at}</div><div class="actime">${ts}</div>`;
+    al.prepend(ar); actRows.push(ar); if(actRows.length>5){al.removeChild(actRows.shift());}
+  }
+  if(Math.random()<0.12){
+    const cpu=Math.floor(Math.random()*40+10),ram=Math.floor(Math.random()*30+50);
+    document.getElementById('rpi-cpu').textContent=cpu+'%'; document.getElementById('rpi-cpu-b').style.width=cpu+'%';
+    document.getElementById('rpi-ram').textContent=ram+'%'; document.getElementById('rpi-ram-b').style.width=ram+'%';
+  }
+}
+
+/* ===== INIT ===== */
+window.addEventListener('DOMContentLoaded',()=>{
+  renderRegalVis();
+  renderRegalYapisi();
+  renderArt(window.ARTS);
+  renderLowStock();
+  populateRfidArtSelect();
+  renderRfidList();
+  renderLC();
+  renderEsp();
+  renderInv();
+  renderChart();
+  setInterval(addMQTT,1800);
+  setInterval(()=>{mqPM=0;},60000);
+  applyI18n();
+});
+</script>
+</body>
+</html>
