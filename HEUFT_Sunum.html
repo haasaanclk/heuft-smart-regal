@@ -575,6 +575,7 @@ body.role-operator .admin-only{display:none!important;}
     <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;">
       <button class="br" onclick="removeBox()"><i class="ti ti-trash"></i> <span data-i18n="bx_delbox">Kutuyu Sil</span></button>
       <div style="display:flex;gap:8px;">
+        <button class="bd" onclick="editBoxArticle()"><i class="ti ti-list-details"></i> <span data-i18n="bx_editall">Tüm Bilgiler</span></button>
         <button class="bd" onclick="clearBox()" data-i18n="bx_clear">Boşalt</button>
         <button class="bo" onclick="saveBox()"><i class="ti ti-check"></i><span data-i18n="btn_save">Kaydet</span></button>
       </div>
@@ -683,7 +684,7 @@ tr:{
   toast_regaldel:"Regal silindi!", toast_katadd:"Kat eklendi!", toast_katdel:"Kat silindi!", toast_boxadd:"Box eklendi!",
   toast_boxsaved:"Box güncellendi!", toast_boxclear:"Box boşaltıldı!", toast_boxdel:"Box silindi!",
   bx_title:"Box Yönetimi", bx_selart:"Mevcut Artikel Seç", bx_none:"Boş Kutu", bx_ver:"Version", bx_var:"Variante", bx_qty:"Miktar (adet)",
-  bx_delbox:"Kutuyu Sil", bx_clear:"Boşalt", bx_empty:"Bu kutu boş — ürün ekleyin",
+  bx_delbox:"Kutuyu Sil", bx_clear:"Boşalt", bx_empty:"Bu kutu boş — ürün ekleyin", bx_editall:"Tüm Bilgiler",
   am_ver:"Version", am_var:"Variante",
   ie_title:"Resmi Düzenle", ie_zoom:"Yakınlaştırma / Boyut", ie_apply:"Uygula", ie_hint:"Kaydırarak resmi büyüt/küçült",
   btn_selectall:"Tümünü Seç", btn_delsel:"Seçilenleri Sil", btn_trash:"Geri Dönüşüm Kutusu",
@@ -766,7 +767,7 @@ de:{
   toast_regaldel:"Regal gelöscht!", toast_katadd:"Ebene hinzugefügt!", toast_katdel:"Ebene gelöscht!", toast_boxadd:"Box hinzugefügt!",
   toast_boxsaved:"Box aktualisiert!", toast_boxclear:"Box geleert!", toast_boxdel:"Box gelöscht!",
   bx_title:"Box-Verwaltung", bx_selart:"Vorhandenen Artikel wählen", bx_none:"Leere Box", bx_ver:"Version", bx_var:"Variante", bx_qty:"Menge (Stück)",
-  bx_delbox:"Box löschen", bx_clear:"Leeren", bx_empty:"Diese Box ist leer — Produkt hinzufügen",
+  bx_delbox:"Box löschen", bx_clear:"Leeren", bx_empty:"Diese Box ist leer — Produkt hinzufügen", bx_editall:"Alle Daten",
   am_ver:"Version", am_var:"Variante",
   ie_title:"Bild bearbeiten", ie_zoom:"Zoom / Größe", ie_apply:"Anwenden", ie_hint:"Schieben zum Vergrößern/Verkleinern",
   btn_selectall:"Alle auswählen", btn_delsel:"Auswahl löschen", btn_trash:"Papierkorb",
@@ -1038,6 +1039,13 @@ function openBoxModal(ri,ki,bi){
   _box={ri,ki,bi};
   const b=RD[ri].kats[ki][bi];
   const inf=boxInfo(b);
+  /* BOŞ kutu → doğrudan Artikel modülündeki tam ürün penceresini aç.
+     Ürün girişinin ana yeri Regal'dir; kaydedilen ürün ARTS'a yazılır ve
+     tüm modüllerde (Artikel/RFID/İnventur/Dashboard/İstatistik) görünür. */
+  if(!inf.no && !b.pn){
+    openArtModal(undefined, {ri,ki,bi});
+    return;
+  }
   document.getElementById('bx_loc').textContent=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
   const sel=document.getElementById('bx_art');
   sel.innerHTML=`<option value="">— ${t('bx_none')} —</option>`+window.ARTS.map(a=>`<option value="${a.no}">${a.no} — ${artName(a)}</option>`).join('');
@@ -1098,6 +1106,25 @@ function removeBox(){
   showToast(t('toast_boxdel'));
 }
 function closeBoxModal(){ document.getElementById('boxModal').classList.remove('open'); }
+/* Kutudaki ürünün TÜM bilgilerini Artikel penceresinde aç/düzenle.
+   Bağlı ürün varsa ana kaydı (ARTS) düzenler — değişiklik tüm modüllere yansır.
+   Eski "bağlantısız" girişler ise burada gerçek ARTS kaydına dönüştürülür. */
+function editBoxArticle(){
+  const {ri,ki,bi}=_box;
+  const b=RD[ri].kats[ki][bi];
+  closeBoxModal();
+  const idx=b.art?window.ARTS.findIndex(a=>a.no===b.art):-1;
+  if(idx>=0){ openArtModal(idx); }
+  else {
+    /* Bağlantısız manuel giriş → tam pencereyi aç, mevcut alanları taşı,
+       kaydedince gerçek ARTS kaydı oluşup bu kutuya bağlanır. */
+    openArtModal(undefined,{ri,ki,bi});
+    if(b.pn) document.getElementById('am_name').value=b.pn;
+    if(b.ver) document.getElementById('am_ver').value=b.ver;
+    if(b.vrt) document.getElementById('am_var').value=b.vrt;
+    if(b.maker) document.getElementById('am_maker').value=b.maker;
+  }
+}
 
 /* ===== RESİM DÜZENLEME ===== */
 let _ieData='', _ieScale=1, _ieTarget=null;
@@ -1699,7 +1726,9 @@ function applyTips(){
   });
 }
 
-function openArtModal(idx){
+let _artBoxTarget=null;   /* Regal kutusundan açıldıysa hedef {ri,ki,bi} */
+function openArtModal(idx, boxCtx){
+  _artBoxTarget = boxCtx || null;
   document.getElementById('artModal').classList.add('open');
   const editing = (idx!==undefined && idx>=0);
   document.getElementById('am_editIdx').value = editing ? idx : -1;
@@ -1722,6 +1751,11 @@ function openArtModal(idx){
     ['am_no','am_name','am_maker','am_loc','am_ver','am_var','am_din','am_unitw','am_boxw','am_avg','am_lead','am_beh'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('am_strat').value='FIFO';
     document.getElementById('am_qtyResult').textContent='0';
+    if(_artBoxTarget){
+      /* Regal kutusundan yeni ürün: konum otomatik dolu (kutunun konumu) */
+      const {ri,ki,bi}=_artBoxTarget;
+      document.getElementById('am_loc').value=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
+    }
   }
 }
 function closeArtModal(){ document.getElementById('artModal').classList.remove('open'); }
@@ -1775,6 +1809,17 @@ function saveArtikel(){
     window.ARTS.push(rec);
     logAudit('add_art',no);
     showToast(t('toast_artadded'));
+  }
+  /* Regal kutusundan eklendiyse: yeni ürünü o kutuya bağla (tek kaynak ARTS) */
+  if(_artBoxTarget){
+    const {ri,ki,bi}=_artBoxTarget;
+    if(RD[ri]&&RD[ri].kats[ki]&&RD[ri].kats[ki][bi]){
+      const b=RD[ri].kats[ki][bi];
+      b.art=no; b.qty=qty;
+      b.s = qty<=2?'l':qty<15?'m':'f';
+      delete b.pn; delete b.ver; delete b.vrt; delete b.maker;
+    }
+    _artBoxTarget=null;
   }
   commit();
   closeArtModal();
