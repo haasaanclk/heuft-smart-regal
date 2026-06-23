@@ -150,6 +150,42 @@ body.role-operator .admin-only{display:none!important;}
 .art-avatar-ov{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s;}
 .art-avatar-ov i{font-size:18px;color:#fff;}
 .art-avatar:hover .art-avatar-ov{opacity:1;}
+
+/* ===== MOBİL / TELEFON UYUMU (responsive) =====
+   Telefon ve tablette düzgün, sığan, dokunmatik dostu görünüm. */
+@media (max-width:820px){
+  /* Sabit 100vh + iç scroll yerine doğal sayfa akışı (telefon için daha iyi) */
+  .app{height:auto;min-height:100vh;}
+  .body{flex-direction:column;overflow:visible;}
+  /* Üst bar sıkışmasın */
+  .tb{height:auto;min-height:52px;padding:8px 12px;gap:8px;flex-wrap:wrap;}
+  /* Kenar menüsü → üstte yatay, kaydırılabilir şerit */
+  .sb{width:100%;flex-direction:row;overflow-x:auto;overflow-y:hidden;
+      border-right:none;border-bottom:1px solid var(--brd);
+      position:sticky;top:0;z-index:9;-webkit-overflow-scrolling:touch;}
+  .sb .ns{display:none;}              /* bölüm başlıkları yatayda gizli */
+  .sb .sb-bot{display:none;}          /* alt istatistik kutusu gizli */
+  .ni{border-left:none;border-bottom:2px solid transparent;
+      white-space:nowrap;padding:11px 13px;}
+  .ni.active{border-left:none;border-bottom-color:var(--org);}
+  .ni .nbdg{display:none;}
+  /* Ana içerik ve sağ panel tam genişlik, alt alta */
+  .main{overflow-y:visible;padding:10px;}
+  .rp{width:100%;border-left:none;border-top:1px solid var(--brd);}
+  /* Geniş içerik (tablolar) yatay kaydırılsın, taşmasın */
+  .cb{overflow-x:auto;}
+  /* KPI ve form gridleri daralt */
+  .mg{grid-template-columns:repeat(2,1fr);}
+  .frow{grid-template-columns:1fr;}
+  #artGrid{grid-template-columns:repeat(2,1fr)!important;}
+  #espGrid{grid-template-columns:repeat(2,1fr)!important;}
+}
+@media (max-width:480px){
+  .mg{grid-template-columns:1fr;}
+  #artGrid{grid-template-columns:1fr!important;}
+  #espGrid{grid-template-columns:repeat(2,1fr)!important;}
+  .tb{gap:6px;}
+}
 </style>
 </head>
 <body>
