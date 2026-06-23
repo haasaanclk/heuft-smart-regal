@@ -271,6 +271,7 @@ body.role-operator .admin-only{display:none!important;}
     <div class="qs"><span class="ql" data-i18n="sum_art">Toplam Artikel</span><span class="qv" style="color:var(--org);" id="sb-artc">12</span></div>
     <div class="qs"><span class="ql" data-i18n="sum_low">Düşük Stok</span><span class="qv" style="color:var(--red);" id="sb-low">4</span></div>
     <div class="qs"><span class="ql" data-i18n="sum_msg">MQTT Msg/dk</span><span class="qv" style="color:var(--grn);" id="sb-msg">0</span></div>
+    <div class="qs"><span class="ql">Build</span><span class="qv" id="sb-build" style="color:var(--org);">—</span></div>
   </div>
 </div>
 
@@ -1146,23 +1147,45 @@ function syncLoc(loc){
   const s=String(loc).indexOf('-');
   return RD[idx].n + (s>=0?String(loc).slice(s):'');
 }
-/* Ürünün konumunu CANLI ver: önce bağlı olduğu box'tan (en güvenilir),
-   yoksa loc metnini güncel regal adına göre düzelterek. Regal adı değişince
-   her zaman güncel adı gösterir. */
+/* K/B kısmını ayır ("hasan01-K1-B1" → "-K1-B1") */
+function locSuffix(loc){ const s=String(loc||'').indexOf('-'); return s>=0?String(loc).slice(s):''; }
+/* Bir kaydın (ürün/RFID) SABİT regal indeksini bul ve _reg olarak CACHE'le.
+   Bir kez bağlanınca regal adı sonradan ne olursa olsun bağ KOPMAZ. */
+function recRegIdx(rec, locStr){
+  if(rec && rec._reg!=null && RD[rec._reg]) return rec._reg;
+  const idx=regIdxFromLoc(locStr);
+  if(idx>=0 && rec) rec._reg=idx;
+  return idx;
+}
+/* Ürün konumunu CANLI ver: önce bağlı box'tan, yoksa cache'lenmiş regal indeksinden */
 function liveProdLoc(a){
   if(!a) return '—';
   for(let ri=0;ri<RD.length;ri++)
     for(let ki=0;ki<RD[ri].kats.length;ki++)
       for(let bi=0;bi<RD[ri].kats[ki].length;bi++)
-        if(RD[ri].kats[ki][bi].art===a.no) return `${RD[ri].n}-K${ki+1}-B${bi+1}`;
-  return a.loc ? syncLoc(a.loc) : '—';
+        if(RD[ri].kats[ki][bi].art===a.no){ a._reg=ri; return `${RD[ri].n}-K${ki+1}-B${bi+1}`; }
+  const idx=recRegIdx(a,a.loc);
+  return idx>=0 ? RD[idx].n+locSuffix(a.loc) : (a.loc||'—');
 }
-/* Açılışta tüm konumları güncel regal adlarına göre onar (eski kopuklukları düzeltir) */
+/* RFID konumunu / tag id'sini CANLI ver (cache'li indeksten) */
+function liveRfLoc(r){
+  const idx=recRegIdx(r, r&&(r.loc||(r.id&&r.id.indexOf('RFID-')===0?r.id.slice(5):'')));
+  return idx>=0 ? RD[idx].n+locSuffix(r.loc) : ((r&&r.loc)||'—');
+}
+function liveRfId(r){
+  if(!r||!r.id||r.id.indexOf('RFID-')!==0) return (r&&r.id)||'';
+  const idx=recRegIdx(r, r.loc||r.id.slice(5));
+  return idx>=0 ? 'RFID-'+RD[idx].n+locSuffix(r.id.slice(5)) : r.id;
+}
+/* Tüm konum metinlerini cache'li regal indeksinden güncelle (açılışta + her ad değişiminde) */
 function reconcileLocations(){
-  window.ARTS.forEach(a=>{ if(a.loc) a.loc=syncLoc(a.loc); });
+  window.ARTS.forEach(a=>{ const idx=recRegIdx(a,a.loc); if(idx>=0) a.loc=RD[idx].n+locSuffix(a.loc); });
   window.RFIDS.forEach(r=>{
-    if(r.loc) r.loc=syncLoc(r.loc);
-    if(r.id && r.id.indexOf('RFID-')===0){ r.id='RFID-'+syncLoc(r.id.slice(5)); }
+    const idx=recRegIdx(r, r.loc||(r.id&&r.id.indexOf('RFID-')===0?r.id.slice(5):''));
+    if(idx>=0){
+      if(r.loc) r.loc=RD[idx].n+locSuffix(r.loc);
+      if(r.id&&r.id.indexOf('RFID-')===0) r.id='RFID-'+RD[idx].n+locSuffix(r.id.slice(5));
+    }
   });
 }
 function renameRegal(ri){
@@ -1170,20 +1193,8 @@ function renameRegal(ri){
   const nv=prompt(t('rename_regal'),old);
   if(nv===null) return;
   const name=nv.trim(); if(!name||name===old) return;
-  /* ÖNEMLİ: Etkilenen konumları ad DEĞİŞMEDEN ÖNCE belirle.
-     (Eski ad + indeks ile; ad değiştikten sonra eski adı bulamazdık.) */
-  const isThis = loc => !!loc && (loc.startsWith(old+'-') || regIdxFromLoc(loc)===ri);
-  const repl = loc => { const s=loc.indexOf('-'); return name+(s>=0?loc.slice(s):''); };
-  const artHit  = window.ARTS.map(a=>isThis(a.loc));
-  const rfLocHit= window.RFIDS.map(r=>isThis(r.loc));
-  const rfIdHit = window.RFIDS.map(r=> (r.id && r.id.indexOf('RFID-')===0) ? isThis(r.id.slice(5)) : false);
   RD[ri].n=name;
-  /* Şimdi yeni adı uygula: ürün konumları, RFID konumları ve RFID tag id'leri */
-  window.ARTS.forEach((a,i)=>{ if(artHit[i]) a.loc=repl(a.loc); });
-  window.RFIDS.forEach((r,i)=>{
-    if(rfLocHit[i]) r.loc=repl(r.loc);
-    if(rfIdHit[i])  r.id='RFID-'+repl(r.id.slice(5));
-  });
+  reconcileLocations();   /* cache'li indekslerden TÜM konum/RFID adlarını yeni ada güncelle */
   commit();
   showToast(t('toast_regalren'));
 }
@@ -2066,7 +2077,7 @@ function renderRfidList(){
     const art=findArt(r.art);
     return `<div class="rfid-r" onclick="showRfidDetail(${i})">
       <i class="ti ti-radio" style="color:${r.st==='aktif'?'var(--grn)':'var(--yel)'};font-size:14px;"></i>
-      <div style="flex:1;"><div style="font-weight:600;">${r.id}</div><div style="font-size:9px;color:var(--txt3);">${r.art}${art?' · '+artName(art):''} · ${r.sig} dBm</div></div>
+      <div style="flex:1;"><div style="font-weight:600;">${liveRfId(r)}</div><div style="font-size:9px;color:var(--txt3);">${r.art}${art?' · '+artName(art):''} · ${r.sig} dBm</div></div>
       ${sigBar(r.sig)}<span class="tag ${r.st==='aktif'?'tok':'tw'}" style="margin-left:5px;">${t(r.st)}</span>
       <button class="iconbtn" style="margin-left:6px;" onclick="event.stopPropagation();openRfidModal(${i})"><i class="ti ti-pencil"></i></button>
       <button class="iconbtn" onclick="event.stopPropagation();deleteRfid(${i})"><i class="ti ti-trash"></i></button>
@@ -2085,9 +2096,9 @@ function openRfidModal(idx){
   document.getElementById('rfidModalTitle').textContent = idx===undefined ? t('rm_title') : t('rm_title_edit');
   if(idx!==undefined){
     const r=window.RFIDS[idx];
-    document.getElementById('rf_id').value=r.id;
+    document.getElementById('rf_id').value=liveRfId(r);
     document.getElementById('rf_art').value=r.art;
-    document.getElementById('rf_loc').value=syncLoc(r.loc);
+    document.getElementById('rf_loc').value=liveRfLoc(r);
     document.getElementById('rf_sig').value=r.sig;
   } else {
     document.getElementById('rf_id').value='';
@@ -2126,11 +2137,11 @@ function showRfidDetail(idx){
   document.getElementById('rfidDetailBody').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--bg);border-radius:8px;border:1px solid var(--brd2);">
       <i class="ti ti-radio" style="font-size:22px;color:${r.st==='aktif'?'var(--grn)':'var(--yel)'};"></i>
-      <div><div style="font-weight:700;">${r.id}</div><div style="font-size:9px;color:var(--txt3);">${r.sig} dBm</div></div>
+      <div><div style="font-weight:700;">${liveRfId(r)}</div><div style="font-size:9px;color:var(--txt3);">${r.sig} dBm</div></div>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;">
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_linkedart')}</span><strong>${r.art}${art?' — '+artName(art):''}</strong></div>
-      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_locinfo')}</span><strong>${syncLoc(r.loc)}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_locinfo')}</span><strong>${liveRfLoc(r)}</strong></div>
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_signal')}</span><strong>${r.sig} dBm</strong></div>
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_status')}</span>${stTag(r.st==='aktif'?'ok':'low')}</div>
       ${art?`<div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_stock')}</span><strong>${art.qty} ${t('unit_pcs')}</strong></div>`:''}
@@ -2426,7 +2437,8 @@ window.addEventListener('beforeunload', persistState);
 
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
-  reconcileLocations();   // konumları güncel regal adlarına göre onar (eski kopuklukları düzeltir)
+  reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
+  const BUILD='b18'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
