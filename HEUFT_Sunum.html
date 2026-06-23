@@ -1125,18 +1125,44 @@ function renderRegalYapisi(){
     ry.appendChild(card);
   });
 }
+/* Bir konum metninin ("R1-K3-B2") hangi regal indeksine ait olduğunu bul.
+   Önce regal ADIYLA eşleştir; eşleşmezse "Rn" varsayılan numarasından indeksi
+   türet — böylece adı önceden değişmiş (kopmuş) konumları da kendiliğinden bulur. */
+function regIdxFromLoc(loc){
+  if(!loc) return -1;
+  const tok=String(loc).split('-')[0];
+  const i=RD.findIndex(r=>r.n===tok);
+  if(i>=0) return i;
+  const m=tok.match(/^R(\d+)$/);
+  if(m){ const idx=parseInt(m[1],10)-1; if(RD[idx]) return idx; }
+  return -1;
+}
+/* Konum metnindeki regal adını güncel RD'deki adla değiştir (K/B kısmı korunur) */
+function syncLoc(loc){
+  const idx=regIdxFromLoc(loc); if(idx<0) return loc;
+  const s=String(loc).indexOf('-');
+  return RD[idx].n + (s>=0?String(loc).slice(s):'');
+}
+/* Açılışta tüm konumları güncel regal adlarına göre onar (eski kopuklukları düzeltir) */
+function reconcileLocations(){
+  window.ARTS.forEach(a=>{ if(a.loc) a.loc=syncLoc(a.loc); });
+  window.RFIDS.forEach(r=>{
+    if(r.loc) r.loc=syncLoc(r.loc);
+    if(r.id && r.id.indexOf('RFID-')===0){ r.id='RFID-'+syncLoc(r.id.slice(5)); }
+  });
+}
 function renameRegal(ri){
   const old=RD[ri].n;
   const nv=prompt(t('rename_regal'),old);
   if(nv===null) return;
   const name=nv.trim(); if(!name||name===old) return;
   RD[ri].n=name;
-  /* Konum referanslarını da güncelle: "OLD-Kx-By" → "NEW-Kx-By"
-     Böylece Artikel ürün penceresindeki konum ve RFID konumları da değişir. */
-  window.ARTS.forEach(a=>{ if(a.loc && a.loc.startsWith(old+'-')) a.loc = name + a.loc.slice(old.length); });
+  /* Bu regale ait tüm ürün ve RFID konumlarını yeni isimle güncelle (indeks bazlı,
+     böylece adı önceden kopmuş konumlar da doğru regale bağlanıp güncellenir). */
+  window.ARTS.forEach(a=>{ if(a.loc && regIdxFromLoc(a.loc)===ri){ const s=a.loc.indexOf('-'); a.loc=name+(s>=0?a.loc.slice(s):''); } });
   window.RFIDS.forEach(r=>{
-    if(r.loc && r.loc.startsWith(old+'-')) r.loc = name + r.loc.slice(old.length);
-    if(r.id  && r.id.startsWith('RFID-'+old+'-')) r.id = 'RFID-'+name + r.id.slice(('RFID-'+old).length);
+    if(r.loc && regIdxFromLoc(r.loc)===ri){ const s=r.loc.indexOf('-'); r.loc=name+(s>=0?r.loc.slice(s):''); }
+    if(r.id && r.id.indexOf('RFID-')===0){ const idLoc=r.id.slice(5); if(regIdxFromLoc(idLoc)===ri){ const s=idLoc.indexOf('-'); r.id='RFID-'+name+(s>=0?idLoc.slice(s):''); } }
   });
   commit();
   showToast(t('toast_regalren'));
@@ -2355,6 +2381,7 @@ window.addEventListener('beforeunload', persistState);
 
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
+  reconcileLocations();   // konumları güncel regal adlarına göre onar (eski kopuklukları düzeltir)
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
