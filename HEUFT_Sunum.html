@@ -981,6 +981,9 @@ function refreshAll(){
   if(typeof renderActiveCalls==='function') renderActiveCalls();
   if(typeof populateStatProduct==='function') populateStatProduct();
   if(typeof renderCustomize==='function') renderCustomize();
+  if(typeof renderEsp==='function') renderEsp();                 /* ESP32 ekranları regal adıyla güncel */
+  if(typeof populateLcSel==='function') populateLcSel();         /* LoadCell regal seçici güncel */
+  if(typeof populateRegalFilter==='function') populateRegalFilter(); /* Artikel regal filtresi güncel */
   const tc=document.getElementById('trashCount');
   if(tc) tc.textContent=window.TRASH&&window.TRASH.length?'('+window.TRASH.length+')':'';
 }
@@ -2126,6 +2129,20 @@ function renderLC(){
     el.appendChild(d);
   });
 }
+/* LoadCell regal seçicisini RD'den doldur (regal adları güncel kalsın) */
+function populateLcSel(){
+  const sel=document.getElementById('lcSel'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML=RD.map((r,i)=>`<option value="${i}">${r.n}</option>`).join('');
+  if(cur!=='' && RD[parseInt(cur,10)]) sel.value=cur;
+}
+/* Artikel sayfasındaki regal filtresini RD'den doldur (ad değişince filtre de çalışsın) */
+function populateRegalFilter(){
+  const sel=document.getElementById('artRegalFilter'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML=`<option value="" data-i18n="art_allregal">${t('art_allregal')}</option>`+RD.map(r=>`<option value="${r.n}">${r.n}</option>`).join('');
+  if(cur && RD.some(r=>r.n===cur)) sel.value=cur;
+}
 
 const ESPD=[{art:'HBE010223',w:'1.24kg',q:10,s:'ok'},{art:'HBE010445',w:'2.34kg',q:10,s:'ok'},{art:'HBE009412',w:'0.08kg',q:1,s:'err'},{art:'HBE010312',w:'0.89kg',q:2,s:'warn'},{art:'HBE009180',w:'1.56kg',q:10,s:'ok'}];
 /* ESP32 görünümü: GERÇEK ZAMANLI Regal yapısı (RD). Her box = bir ESP32 ekranı.
@@ -2388,7 +2405,9 @@ window.addEventListener('DOMContentLoaded',()=>{
   renderLowStock();
   populateRfidArtSelect();
   renderRfidList();
+  populateLcSel();
   renderLC();
+  populateRegalFilter();
   renderEsp();
   renderInv();
   renderChart('daily');
