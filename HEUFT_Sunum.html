@@ -50,6 +50,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .body{display:flex;flex:1;overflow:hidden;}
 .sb{width:198px;background:rgba(33,37,50,.8);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
 .ns{font-size:9px;color:var(--txt3);letter-spacing:.8px;text-transform:uppercase;padding:12px 14px 4px;font-weight:600;}
+/* ===== AKORDEON SOL MENÜ ===== */
+.ns.acc{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;
+  margin:4px 8px 2px;padding:8px 10px;border-radius:7px;background:rgba(255,255,255,.02);
+  border:1px solid transparent;transition:background .18s,border-color .18s,color .18s;}
+.ns.acc:hover{background:rgba(255,85,0,.07);border-color:var(--brd2);color:var(--txt2);}
+.ns.acc .ns-chev{font-size:13px;transition:transform .28s ease;color:var(--org);}
+.ns.acc.collapsed .ns-chev{transform:rotate(-90deg);}
+.ns-group{overflow:hidden;max-height:600px;opacity:1;transition:max-height .32s ease,opacity .25s ease;}
+.ns-group.collapsed{max-height:0;opacity:0;}
+.ns.acc + .ns-group .ni{border-left:none;margin:1px 8px;border-radius:7px;padding-left:12px;}
+.ns.acc + .ns-group .ni.active{border-left:none;background:var(--orgl);box-shadow:inset 3px 0 0 var(--org);}
 .ni{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:11px;font-weight:500;color:var(--txt3);cursor:pointer;border-left:2px solid transparent;transition:background .15s,color .15s;}
 .ni:hover{color:var(--txt2);background:rgba(255,255,255,.04);}
 .ni.active{color:var(--org);border-left-color:var(--org);background:var(--orgl);}
@@ -165,6 +176,8 @@ body.role-operator .admin-only{display:none!important;}
       position:sticky;top:0;z-index:9;-webkit-overflow-scrolling:touch;}
   .sb .ns{display:none;}              /* bölüm başlıkları yatayda gizli */
   .sb .sb-bot{display:none;}          /* alt istatistik kutusu gizli */
+  /* Akordeon sarmalayıcılar mobilde düzeni bozmasın: ni'ler doğrudan yatay aksın */
+  .sb .ns-group{display:contents;max-height:none!important;opacity:1!important;}
   .ni{border-left:none;border-bottom:2px solid transparent;
       white-space:nowrap;padding:11px 13px;}
   .ni.active{border-left:none;border-bottom-color:var(--org);}
@@ -225,21 +238,27 @@ body.role-operator .admin-only{display:none!important;}
 
 <div class="body">
 <div class="sb">
-  <div class="ns" data-i18n="nav_main">Ana Modüller</div>
-  <div class="ni active" onclick="sv('dash',this)"><i class="ti ti-layout-dashboard"></i><span data-i18n="nav_dash">DASHBOARD</span></div>
-  <div class="ni" onclick="sv('regal',this)"><i class="ti ti-server"></i><span data-i18n="nav_regal">REGAL YAPISI</span></div>
-  <div class="ni" onclick="sv('artikel',this)"><i class="ti ti-package"></i><span data-i18n="nav_art">ARTİKEL / ÜRÜN</span></div>
-  <div class="ni" onclick="sv('lc',this)"><i class="ti ti-weight"></i><span data-i18n="nav_lc">AĞIRLIK / LOADCELL</span></div>
-  <div class="ni" onclick="sv('rfid',this)"><i class="ti ti-radio"></i><span data-i18n="nav_rfid">RFID YÖNETİM</span></div>
-  <div class="ns" data-i18n="nav_ctrl">Kontrol</div>
-  <div class="ni" onclick="sv('esp',this)"><i class="ti ti-device-tablet"></i><span data-i18n="nav_esp">ESP32 EKRANLAR</span></div>
-  <div class="ni" onclick="sv('mqtt',this)"><i class="ti ti-antenna"></i><span data-i18n="nav_mqtt">MQTT MONITOR</span><span class="nbdg nb-g">●</span></div>
-  <div class="ni" onclick="sv('inv',this)"><i class="ti ti-clipboard-check"></i><span data-i18n="nav_inv">İNVENTUR</span></div>
-  <div class="ni" onclick="sv('kanban',this)"><i class="ti ti-arrow-autofit-down"></i><span data-i18n="nav_kanban">KANBAN-LAGER</span><span class="nbdg nb-r" id="kanbanNavBadge" style="display:none;">0</span></div>
-  <div class="ns" data-i18n="nav_rep">Raporlama</div>
-  <div class="ni" onclick="sv('stat',this)"><i class="ti ti-chart-bar"></i><span data-i18n="nav_stat">İSTATİSTİKLER</span></div>
-  <div class="ni" onclick="sv('uy',this)"><i class="ti ti-bell"></i><span data-i18n="nav_uy">UYARILAR</span><span class="nbdg nb-r">3</span></div>
-  <div class="ni" onclick="sv('set',this)"><i class="ti ti-settings"></i><span data-i18n="nav_set">AYARLAR</span></div>
+  <div class="ns acc" onclick="toggleNav(this)"><span data-i18n="nav_main">Ana Modüller</span><i class="ti ti-chevron-down ns-chev"></i></div>
+  <div class="ns-group">
+    <div class="ni active" onclick="sv('dash',this)"><i class="ti ti-layout-dashboard"></i><span data-i18n="nav_dash">DASHBOARD</span></div>
+    <div class="ni" onclick="sv('regal',this)"><i class="ti ti-server"></i><span data-i18n="nav_regal">REGAL YAPISI</span></div>
+    <div class="ni" onclick="sv('artikel',this)"><i class="ti ti-package"></i><span data-i18n="nav_art">ARTİKEL / ÜRÜN</span></div>
+    <div class="ni" onclick="sv('lc',this)"><i class="ti ti-weight"></i><span data-i18n="nav_lc">AĞIRLIK / LOADCELL</span></div>
+    <div class="ni" onclick="sv('rfid',this)"><i class="ti ti-radio"></i><span data-i18n="nav_rfid">RFID YÖNETİM</span></div>
+  </div>
+  <div class="ns acc" onclick="toggleNav(this)"><span data-i18n="nav_ctrl">Kontrol</span><i class="ti ti-chevron-down ns-chev"></i></div>
+  <div class="ns-group">
+    <div class="ni" onclick="sv('esp',this)"><i class="ti ti-device-tablet"></i><span data-i18n="nav_esp">ESP32 EKRANLAR</span></div>
+    <div class="ni" onclick="sv('mqtt',this)"><i class="ti ti-antenna"></i><span data-i18n="nav_mqtt">MQTT MONITOR</span><span class="nbdg nb-g">●</span></div>
+    <div class="ni" onclick="sv('inv',this)"><i class="ti ti-clipboard-check"></i><span data-i18n="nav_inv">İNVENTUR</span></div>
+    <div class="ni" onclick="sv('kanban',this)"><i class="ti ti-arrow-autofit-down"></i><span data-i18n="nav_kanban">KANBAN-LAGER</span><span class="nbdg nb-r" id="kanbanNavBadge" style="display:none;">0</span></div>
+  </div>
+  <div class="ns acc" onclick="toggleNav(this)"><span data-i18n="nav_rep">Raporlama</span><i class="ti ti-chevron-down ns-chev"></i></div>
+  <div class="ns-group">
+    <div class="ni" onclick="sv('stat',this)"><i class="ti ti-chart-bar"></i><span data-i18n="nav_stat">İSTATİSTİKLER</span></div>
+    <div class="ni" onclick="sv('uy',this)"><i class="ti ti-bell"></i><span data-i18n="nav_uy">UYARILAR</span><span class="nbdg nb-r">3</span></div>
+    <div class="ni" onclick="sv('set',this)"><i class="ti ti-settings"></i><span data-i18n="nav_set">AYARLAR</span></div>
+  </div>
   <div class="sb-bot">
     <div class="pt2" data-i18n="summary">Anlık Özet</div>
     <div class="qs"><span class="ql" data-i18n="sum_rkb">Regal / Kat / Box</span><span class="qv">5/25/125</span></div>
@@ -979,6 +998,13 @@ function sv(id,el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
   el.classList.add('active');
+}
+/* Akordeon sol menü: bölüm başlığına tıkla → altındaki modüller açılıp kapanır */
+function toggleNav(header){
+  const grp=header.nextElementSibling;
+  if(!grp||!grp.classList.contains('ns-group')) return;
+  header.classList.toggle('collapsed');
+  grp.classList.toggle('collapsed');
 }
 
 setInterval(()=>{const n=new Date();document.getElementById('clk').textContent=n.getDate().toString().padStart(2,'0')+'.'+(n.getMonth()+1).toString().padStart(2,'0')+'.'+n.getFullYear()+' · '+n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');},1000);
