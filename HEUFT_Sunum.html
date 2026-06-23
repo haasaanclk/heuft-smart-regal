@@ -1159,13 +1159,19 @@ function renameRegal(ri){
   const nv=prompt(t('rename_regal'),old);
   if(nv===null) return;
   const name=nv.trim(); if(!name||name===old) return;
+  /* ÖNEMLİ: Etkilenen konumları ad DEĞİŞMEDEN ÖNCE belirle.
+     (Eski ad + indeks ile; ad değiştikten sonra eski adı bulamazdık.) */
+  const isThis = loc => !!loc && (loc.startsWith(old+'-') || regIdxFromLoc(loc)===ri);
+  const repl = loc => { const s=loc.indexOf('-'); return name+(s>=0?loc.slice(s):''); };
+  const artHit  = window.ARTS.map(a=>isThis(a.loc));
+  const rfLocHit= window.RFIDS.map(r=>isThis(r.loc));
+  const rfIdHit = window.RFIDS.map(r=> (r.id && r.id.indexOf('RFID-')===0) ? isThis(r.id.slice(5)) : false);
   RD[ri].n=name;
-  /* Bu regale ait tüm ürün ve RFID konumlarını yeni isimle güncelle (indeks bazlı,
-     böylece adı önceden kopmuş konumlar da doğru regale bağlanıp güncellenir). */
-  window.ARTS.forEach(a=>{ if(a.loc && regIdxFromLoc(a.loc)===ri){ const s=a.loc.indexOf('-'); a.loc=name+(s>=0?a.loc.slice(s):''); } });
-  window.RFIDS.forEach(r=>{
-    if(r.loc && regIdxFromLoc(r.loc)===ri){ const s=r.loc.indexOf('-'); r.loc=name+(s>=0?r.loc.slice(s):''); }
-    if(r.id && r.id.indexOf('RFID-')===0){ const idLoc=r.id.slice(5); if(regIdxFromLoc(idLoc)===ri){ const s=idLoc.indexOf('-'); r.id='RFID-'+name+(s>=0?idLoc.slice(s):''); } }
+  /* Şimdi yeni adı uygula: ürün konumları, RFID konumları ve RFID tag id'leri */
+  window.ARTS.forEach((a,i)=>{ if(artHit[i]) a.loc=repl(a.loc); });
+  window.RFIDS.forEach((r,i)=>{
+    if(rfLocHit[i]) r.loc=repl(r.loc);
+    if(rfIdHit[i])  r.id='RFID-'+repl(r.id.slice(5));
   });
   commit();
   showToast(t('toast_regalren'));
