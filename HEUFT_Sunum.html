@@ -1167,21 +1167,33 @@ function liveProdLoc(a){
   const idx=recRegIdx(a,a.loc);
   return idx>=0 ? RD[idx].n+locSuffix(a.loc) : (a.loc||'—');
 }
-/* RFID konumunu / tag id'sini CANLI ver (cache'li indeksten) */
+/* RFID'nin SABİT regal indeksini bul: kendi loc'undan, olmazsa BAĞLI ÜRÜNDEN kurtar.
+   Böylece adı kopmuş RFID'ler de bağlı oldukları ürünün regaline bağlanır. */
+function rfRegIdx(r){
+  if(!r) return -1;
+  if(r._reg!=null && RD[r._reg]) return r._reg;
+  let idx=regIdxFromLoc(r.loc||(r.id&&r.id.indexOf('RFID-')===0?r.id.slice(5):''));
+  if(idx<0 && r.art){ const a=findArt(r.art); if(a) idx=recRegIdx(a,a.loc); }   // bağlı üründen kurtar
+  if(idx>=0) r._reg=idx;
+  return idx;
+}
+/* RFID konumunu / tag id'sini CANLI ver */
 function liveRfLoc(r){
-  const idx=recRegIdx(r, r&&(r.loc||(r.id&&r.id.indexOf('RFID-')===0?r.id.slice(5):'')));
-  return idx>=0 ? RD[idx].n+locSuffix(r.loc) : ((r&&r.loc)||'—');
+  const idx=rfRegIdx(r);
+  return idx>=0 ? RD[idx].n+locSuffix(r&&r.loc) : ((r&&r.loc)||'—');
 }
 function liveRfId(r){
   if(!r||!r.id||r.id.indexOf('RFID-')!==0) return (r&&r.id)||'';
-  const idx=recRegIdx(r, r.loc||r.id.slice(5));
+  const idx=rfRegIdx(r);
   return idx>=0 ? 'RFID-'+RD[idx].n+locSuffix(r.id.slice(5)) : r.id;
 }
-/* Tüm konum metinlerini cache'li regal indeksinden güncelle (açılışta + her ad değişiminde) */
+/* Tüm konum metinlerini cache'li regal indeksinden güncelle (açılışta + her ad değişiminde).
+   Önce ürünler (indeks cache lenir), sonra RFID'ler (gerekirse bağlı üründen kurtarılır). */
 function reconcileLocations(){
-  window.ARTS.forEach(a=>{ const idx=recRegIdx(a,a.loc); if(idx>=0) a.loc=RD[idx].n+locSuffix(a.loc); });
+  window.ARTS.forEach(a=>{ liveProdLoc(a); }); // _reg'i cache le (box bağlısı dahil)
+  window.ARTS.forEach(a=>{ const idx=(a._reg!=null&&RD[a._reg])?a._reg:recRegIdx(a,a.loc); if(idx>=0) a.loc=RD[idx].n+locSuffix(a.loc); });
   window.RFIDS.forEach(r=>{
-    const idx=recRegIdx(r, r.loc||(r.id&&r.id.indexOf('RFID-')===0?r.id.slice(5):''));
+    const idx=rfRegIdx(r);
     if(idx>=0){
       if(r.loc) r.loc=RD[idx].n+locSuffix(r.loc);
       if(r.id&&r.id.indexOf('RFID-')===0) r.id='RFID-'+RD[idx].n+locSuffix(r.id.slice(5));
@@ -2438,7 +2450,7 @@ window.addEventListener('beforeunload', persistState);
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
-  const BUILD='b18'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b19'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
