@@ -2047,7 +2047,58 @@ function addMQTT(){
   }
 }
 
+/* ===== KALICI VERİ / PERSISTENZ (localStorage) =====
+   Veriler artık tarayıcıda kalıcı olarak saklanır. Sayfa yenilense veya
+   kapatılıp açılsa bile eklenen artikel/RFID/silinenler korunur.
+   Daten bleiben dauerhaft im Browser gespeichert (auch nach Neuladen). */
+const HEUFT_DB_KEY='heuft_regal_state_v1';
+function persistState(){
+  try{
+    const snapshot={
+      v:1,
+      ts:new Date().toISOString(),
+      ARTS:window.ARTS,
+      RFIDS:window.RFIDS,
+      RD:RD,
+      TRASH:window.TRASH,
+      AUDIT:window.AUDIT,
+      ORDERLIST:[...(window.ORDERLIST||[])],
+      ORDEREXCLUDE:[...(window.ORDEREXCLUDE||[])]
+    };
+    localStorage.setItem(HEUFT_DB_KEY, JSON.stringify(snapshot));
+    return true;
+  }catch(e){ console.warn('persistState başarısız / fehlgeschlagen:', e); return false; }
+}
+function restoreState(){
+  try{
+    const raw=localStorage.getItem(HEUFT_DB_KEY);
+    if(!raw) return false;                 // ilk açılış: demo verisi kalsın
+    const d=JSON.parse(raw);
+    if(Array.isArray(d.ARTS))  window.ARTS=d.ARTS;
+    if(Array.isArray(d.RFIDS)) window.RFIDS=d.RFIDS;
+    if(Array.isArray(d.RD))    RD=d.RD;
+    if(Array.isArray(d.TRASH)) window.TRASH=d.TRASH;
+    if(Array.isArray(d.AUDIT)) window.AUDIT=d.AUDIT;
+    if(Array.isArray(d.ORDERLIST))    window.ORDERLIST=new Set(d.ORDERLIST);
+    if(Array.isArray(d.ORDEREXCLUDE)) window.ORDEREXCLUDE=new Set(d.ORDEREXCLUDE);
+    return true;
+  }catch(e){ console.warn('restoreState başarısız / fehlgeschlagen:', e); return false; }
+}
+/* Demo verisine sıfırla (konsoldan: heuftResetData()) */
+function heuftResetData(){
+  try{ localStorage.removeItem(HEUFT_DB_KEY); }catch(e){}
+  location.reload();
+}
+window.heuftResetData=heuftResetData;
+window.persistState=persistState;
+/* Her veri değişiminde otomatik kaydet — commit() üzerinden tetiklenir */
+Bus.on('data:changed', persistState);
+/* RFID/box gibi commit çağırmayan akışları da garanti altına al */
+setInterval(persistState, 5000);
+window.addEventListener('beforeunload', persistState);
+
 window.addEventListener('DOMContentLoaded',()=>{
+  restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);

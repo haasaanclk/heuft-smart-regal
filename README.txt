@@ -31,8 +31,12 @@ BU SÜRÜMDE DÜZELTİLEN:
 - Otomatik tarayıcı testiyle doğrulandı: TR↔DE geçişi, Artikel ekleme (ağırlık→adet
   hesabı dahil), RFID ekle/düzenle/sil/detay akışlarının hepsi çalışıyor.
 
+YENİ (bu sürümde eklendi):
+- KALICI VERİ: Artikel/RFID ekleme-silme-düzenleme artık tarayıcıda kalıcı
+  (localStorage). Sayfa yenilense veya kapatılıp açılsa bile veriler korunur.
+  Demo verisine dönmek için tarayıcı konsolunda heuftResetData() yazın.
+
 BİLİNEN EKSİKLER (sıradaki adımda tamamlanacak):
-- Artikel ekle/sil/düzenle kalıcı değil (sayfa yenilenince sıfırlanır — henüz backend/DB yok)
 - Gerçek MQTT broker bağlantısı yok, veriler simüle
 - Regal yapısı sayfasında kat/box ekleme henüz pasif (placeholder)
 - RFID silme native tarayıcı onay penceresi (confirm) kullanıyor — bu normal, "Tamam"a basmanız yeterli
