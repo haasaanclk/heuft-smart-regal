@@ -350,8 +350,54 @@ body.role-operator .admin-only{display:none!important;}
 
 <!-- ESP32 -->
 <div class="view" id="view-esp">
-  <div class="card"><div class="ch"><i class="ti ti-device-tablet" style="color:var(--org);"></i><span class="ct" data-i18n="esp_title">ESP32 2" Ekran Önizlemeleri</span></div>
-  <div class="cb"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;" id="espGrid"></div></div></div>
+  <div class="card"><div class="ch"><i class="ti ti-device-tablet" style="color:var(--org);"></i><span class="ct" data-i18n="esp_title">ESP32 2" Ekran Önizlemeleri</span>
+  <span style="font-size:10px;color:var(--txt3);margin-left:auto;display:flex;align-items:center;gap:4px;"><i class="ti ti-hand-finger"></i><span data-i18n="esp_hint">Kutuya tıklayın → ESP ekranı</span></span></div>
+  <div class="cb"><div id="espGrid"></div></div></div>
+</div>
+
+<!-- ESP32 EKRAN MODAL -->
+<div class="modal-bg" id="espScreenModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box sm">
+    <div class="m-title"><span><span data-i18n="esp_screen">ESP32 Ekranı</span> · <span id="esp_loc" style="color:var(--org);"></span></span><span class="m-x" onclick="document.getElementById('espScreenModal').classList.remove('open')"><i class="ti ti-x"></i></span></div>
+    <div id="espScreenBody"></div>
+  </div>
+</div>
+
+<!-- DESIGN & SCHRIFTART MODAL (renk seçici + yazı tipi tek pencerede) -->
+<div class="modal-bg" id="designModal" onclick="if(event.target===this)closeDesignModal()">
+  <div class="modal-box sm">
+    <div class="m-title"><span><i class="ti ti-palette" style="color:var(--org);"></i> <span data-i18n="thm_title">Tema & Yazı Tipi</span></span><span class="m-x" onclick="closeDesignModal()"><i class="ti ti-x"></i></span></div>
+    <div class="fl" data-i18n="thm_accent">Vurgu Rengi</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:5px 9px;cursor:pointer;">
+        <input type="color" id="dm_color" value="#ff5500" oninput="applyAccent(this.value)" style="width:34px;height:28px;border:none;background:none;padding:0;cursor:pointer;">
+        <span style="font-size:10px;color:var(--txt2);" data-i18n="thm_custom">Özel Renk</span>
+      </label>
+      <div style="display:flex;gap:6px;">
+        <button class="thmdot" onclick="applyAccent('#ff5500')" style="background:#ff5500;" title="HEUFT Orange"></button>
+        <button class="thmdot" onclick="applyAccent('#4d9dff')" style="background:#4d9dff;" title="Blau"></button>
+        <button class="thmdot" onclick="applyAccent('#0fdb7e')" style="background:#0fdb7e;" title="Grün"></button>
+        <button class="thmdot" onclick="applyAccent('#7f77dd')" style="background:#7f77dd;" title="Violett"></button>
+        <button class="thmdot" onclick="applyAccent('#e24b4a')" style="background:#e24b4a;" title="Rot"></button>
+      </div>
+    </div>
+    <div class="fl" style="margin-top:12px;" data-i18n="thm_font">Yazı Tipi</div>
+    <select class="fi" id="dm_font" onchange="setFont(this.value)">
+      <option value="'Segoe UI',Arial,sans-serif">Segoe UI</option>
+      <option value="Verdana,Geneva,sans-serif">Verdana</option>
+      <option value="Tahoma,sans-serif">Tahoma</option>
+      <option value="'Trebuchet MS',sans-serif">Trebuchet MS</option>
+      <option value="Georgia,serif">Georgia</option>
+      <option value="'Times New Roman',serif">Times New Roman</option>
+      <option value="'Courier New',monospace">Courier / Mono</option>
+    </select>
+    <div id="dm_preview" style="margin-top:12px;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:12px;text-align:center;color:var(--txt);font-size:14px;">
+      <span style="color:var(--org);font-weight:800;">HEUFT</span> <span data-i18n="thm_preview">Önizleme — HEUFT Smart Regal 123</span>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+      <button class="bo" onclick="closeDesignModal()"><i class="ti ti-check"></i> <span data-i18n="btn_done">Tamam</span></button>
+    </div>
+  </div>
 </div>
 
 <!-- MQTT -->
@@ -437,6 +483,7 @@ body.role-operator .admin-only{display:none!important;}
   <div class="cb"><div class="langsw" style="width:fit-content;"><button class="langbtn on" id="lbTR2" onclick="setLang('tr')">Türkçe</button><button class="langbtn" id="lbDE2" onclick="setLang('de')">Deutsch</button></div></div></div>
   <div class="card"><div class="ch"><i class="ti ti-palette" style="color:var(--org);"></i><span class="ct" data-i18n="thm_title">Tema & Yazı Tipi</span></div>
   <div class="cb">
+    <button class="bo" onclick="openDesignModal()" style="margin-bottom:12px;"><i class="ti ti-adjustments-alt"></i> <span data-i18n="thm_open">Renk & Yazı Tipi Seç</span></button>
     <div class="fl" data-i18n="thm_accent">Vurgu Rengi</div>
     <div style="display:flex;gap:8px;margin-bottom:10px;">
       <button class="thmdot" onclick="setTheme('#ff5500','#cc4400')" style="background:#ff5500;" title="HEUFT Orange"></button>
@@ -758,6 +805,8 @@ tr:{
   cust_btn:"Ekle / Kaldır", cust_title:"Panel Widget'ları (Göster / Gizle)", cust_metrics:"Özet Kartları", cust_lowrecent:"Düşük Stok + Son İşlemler",
   art_allregal:"Tüm Regaller", st_allprod:"Tüm Ürünler",
   thm_title:"Tema & Yazı Tipi", thm_accent:"Vurgu Rengi", thm_font:"Yazı Tipi",
+  thm_open:"Renk & Yazı Tipi Seç", thm_custom:"Özel Renk", thm_preview:"Önizleme — HEUFT Smart Regal 123", btn_done:"Tamam",
+  esp_hint:"Kutuya tıklayın → ESP ekranı", esp_screen:"ESP32 Ekranı", esp_empty:"Bu kutuda ürün yok", esp_nobox:"Henüz box tanımlı değil",
   tip_dash:"Genel bakış paneli — özet, regal durumu, çağırma", tip_regal:"Raf/kat/box yapısı yönetimi ve ürün atama", tip_art:"Ürün/artikel listesi — ekle, düzenle, sil",
   tip_lc:"LoadCell ağırlık sensörü monitörü", tip_rfid:"RFID etiket yönetimi ve sinyal takibi", tip_esp:"ESP32 dokunmatik ekran önizlemeleri",
   tip_mqtt:"Canlı MQTT mesaj akışı (broker)", tip_inv:"İnventür — sistem vs sayım karşılaştırması", tip_stat:"İstatistik — giriş/çıkış grafikleri",
@@ -841,6 +890,8 @@ de:{
   cust_btn:"Hinzufügen / Entfernen", cust_title:"Dashboard-Widgets (Ein-/Ausblenden)", cust_metrics:"Übersichtskarten", cust_lowrecent:"Niedriger Bestand + Transaktionen",
   art_allregal:"Alle Regale", st_allprod:"Alle Produkte",
   thm_title:"Design & Schriftart", thm_accent:"Akzentfarbe", thm_font:"Schriftart",
+  thm_open:"Farbe & Schriftart wählen", thm_custom:"Eigene Farbe", thm_preview:"Vorschau — HEUFT Smart Regal 123", btn_done:"Fertig",
+  esp_hint:"Box anklicken → ESP-Display", esp_screen:"ESP32-Display", esp_empty:"Keine Ware in dieser Box", esp_nobox:"Noch keine Box definiert",
   tip_dash:"Übersicht — Zusammenfassung, Regalstatus, Abruf", tip_regal:"Regal-/Ebenen-/Box-Struktur & Produktzuordnung", tip_art:"Artikelliste — hinzufügen, bearbeiten, löschen",
   tip_lc:"LoadCell-Gewichtssensor-Monitor", tip_rfid:"RFID-Tag-Verwaltung & Signalverfolgung", tip_esp:"ESP32-Touchscreen-Vorschau",
   tip_mqtt:"Live-MQTT-Nachrichtenstrom (Broker)", tip_inv:"Inventur — System- vs. Zählvergleich", tip_stat:"Statistik — Zugang/Abgang-Diagramme",
@@ -866,6 +917,8 @@ function applyI18n(){
   renderLowStock();
   renderRegalYapisi();
   renderEsp();
+  if(typeof renderKanban==='function') renderKanban();        /* Stok Bilgi Tablosu: status sütunu dil değişince çevrilsin */
+  if(typeof renderPickList==='function') renderPickList(document.getElementById('pickSrch')?document.getElementById('pickSrch').value:'');
   if(typeof renderNotes==='function') renderNotes();
   if(typeof populateStatProduct==='function') populateStatProduct();
   if(typeof renderCustomize==='function') renderCustomize();
@@ -1664,6 +1717,26 @@ function setTheme(c,c2){
   document.documentElement.style.setProperty('--orgl',hexA(c,0.12));
 }
 function setFont(f){ document.body.style.fontFamily=f; }
+/* Hex rengi yüzde oranında koyulaştır/açraltır (ör. -22 = %22 koyu) */
+function shade(hex,p){
+  const n=parseInt(hex.slice(1),16); const t=p<0?0:255; const a=Math.abs(p)/100;
+  const R=(n>>16)&255,G=(n>>8)&255,B=n&255;
+  const f=x=>Math.round((t-x)*a)+x;
+  return '#'+((1<<24)+(f(R)<<16)+(f(G)<<8)+f(B)).toString(16).slice(1);
+}
+/* Vurgu rengini uygula (ikinci/koyu tonu otomatik hesapla) + seçiciyi senkronla */
+function applyAccent(c){
+  setTheme(c, shade(c,-25));
+  const p=document.getElementById('dm_color'); if(p) p.value=c;
+}
+function openDesignModal(){
+  /* Mevcut vurgu rengini seçiciye yansıt (hex ise) */
+  const cur=getComputedStyle(document.documentElement).getPropertyValue('--org').trim();
+  const p=document.getElementById('dm_color');
+  if(p && /^#([0-9a-f]{6})$/i.test(cur)) p.value=cur;
+  document.getElementById('designModal').classList.add('open');
+}
+function closeDesignModal(){ document.getElementById('designModal').classList.remove('open'); }
 
 /* ===== ARTİKEL: arama + regal filtresi ===== */
 function renderArtFiltered(){
@@ -1978,17 +2051,68 @@ function renderLC(){
 }
 
 const ESPD=[{art:'HBE010223',w:'1.24kg',q:10,s:'ok'},{art:'HBE010445',w:'2.34kg',q:10,s:'ok'},{art:'HBE009412',w:'0.08kg',q:1,s:'err'},{art:'HBE010312',w:'0.89kg',q:2,s:'warn'},{art:'HBE009180',w:'1.56kg',q:10,s:'ok'}];
+/* ESP32 görünümü: GERÇEK ZAMANLI Regal yapısı (RD). Her box = bir ESP32 ekranı.
+   Box'a tıklayınca o box'ın canlı ESP ekranı (ARTS tek kaynağından) modalda açılır. */
 function renderEsp(){
-  document.getElementById('espGrid').innerHTML=ESPD.map(e=>`
-    <div style="background:#050710;border:1.5px solid var(--org);border-radius:8px;padding:8px;position:relative;">
-      <div style="position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:${e.s==='ok'?'var(--grn)':e.s==='warn'?'var(--yel)':'var(--red)'}"></div>
-      <div style="background:#020310;border-radius:4px;padding:6px;text-align:center;">
-        <div style="font-size:7px;color:var(--org);font-weight:700;">HEUFT</div>
-        <div style="font-size:9px;color:#fff;font-weight:600;margin:2px 0;">${e.art}</div>
-        <div style="font-size:12px;font-weight:800;color:var(--org);">${e.w}</div>
-        <div style="font-size:9px;color:${e.s==='ok'?'var(--grn)':e.s==='warn'?'var(--yel)':'var(--red)'};">${e.q} ${t('unit_pcs')}</div>
-      </div>
-    </div>`).join('');
+  const host=document.getElementById('espGrid'); if(!host) return;
+  if(!RD.length){ host.innerHTML=`<div style="color:var(--txt3);font-size:11px;padding:14px;text-align:center;">${t('esp_nobox')}</div>`; return; }
+  host.innerHTML=RD.map((r,ri)=>{
+    const rows=r.kats.map((kat,ki)=>{
+      const tiles=kat.map((b,bi)=>{
+        const inf=boxInfo(b); const has=!!inf.no;
+        const col=has?(inf.qty<=2?'var(--red)':inf.qty<15?'var(--yel)':'var(--grn)'):'var(--brd2)';
+        return `<div onclick="openEspScreen(${ri},${ki},${bi})" data-tip="${r.n}-K${ki+1}-B${bi+1}"
+            style="cursor:pointer;background:#050710;border:1.5px solid ${has?'var(--org)':'var(--brd2)'};border-radius:7px;padding:5px;width:64px;">
+          <div style="background:#020310;border-radius:4px;padding:5px 4px;text-align:center;">
+            <div style="font-size:6px;color:var(--org);font-weight:700;letter-spacing:.5px;">HEUFT·B${bi+1}</div>
+            <div style="font-size:7px;color:#fff;font-weight:600;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${has?inf.no:'—'}</div>
+            <div style="font-size:13px;font-weight:800;color:${col};">${has?inf.qty:'·'}</div>
+          </div></div>`;
+      }).join('');
+      return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+        <span style="font-size:8px;color:var(--txt3);width:22px;font-weight:600;">K${ki+1}</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">${tiles}</div></div>`;
+    }).join('');
+    return `<div style="background:var(--bg4);border:1px solid var(--brd2);border-radius:9px;padding:11px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">
+        <i class="ti ti-device-tablet" style="color:var(--org);font-size:15px;"></i>
+        <span style="font-weight:700;">${r.n}</span>
+        <span style="color:var(--txt3);font-size:9px;">· ${r.kats.reduce((a,k)=>a+k.length,0)} × ESP32</span></div>
+      ${rows}</div>`;
+  }).join('');
+}
+function openEspScreen(ri,ki,bi){
+  const b=RD[ri].kats[ki][bi];
+  const inf=boxInfo(b);
+  const a=b.art?findArt(b.art):null;
+  const loc=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
+  document.getElementById('esp_loc').textContent=loc;
+  const body=document.getElementById('espScreenBody');
+  if(!inf.no){
+    body.innerHTML=`<div style="background:#050710;border:1.5px solid var(--brd2);border-radius:14px;padding:26px;text-align:center;color:var(--txt3);">
+      <i class="ti ti-device-tablet-off" style="font-size:30px;"></i>
+      <div style="margin-top:10px;font-size:11px;">${t('esp_empty')}</div></div>`;
+  } else {
+    const qty=inf.qty;
+    const col=qty<=2?'var(--red)':qty<15?'var(--yel)':'var(--grn)';
+    const wkg=(a&&a.unitw)?((a.unitw*qty)/1000).toFixed(2)+' kg':'—';
+    const stTxt=qty<=2?t('kritik'):qty<15?t('dusuk'):t('stokta');
+    body.innerHTML=`<div style="background:#050710;border:2px solid var(--org);border-radius:14px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.6);">
+      <div style="background:#020310;border-radius:10px;padding:18px 12px;text-align:center;">
+        <div style="font-size:12px;color:var(--org);font-weight:800;letter-spacing:1.5px;">HEUFT</div>
+        <div style="font-size:9px;color:var(--txt3);margin-bottom:9px;">${loc}</div>
+        <div style="font-size:13px;color:#fff;font-weight:700;">${inf.no}</div>
+        <div style="font-size:10px;color:var(--txt2);margin-bottom:12px;">${inf.name}</div>
+        <div style="font-size:32px;font-weight:900;color:var(--org);line-height:1;">${wkg}</div>
+        <div style="font-size:11px;color:${col};font-weight:700;margin-top:7px;">${qty} ${t('unit_pcs')} · ${stTxt}</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:12px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${col};box-shadow:0 0 6px ${col};"></span>
+          <span style="font-size:8px;color:var(--txt3);letter-spacing:.5px;">ESP32 · RC522 · HX711</span>
+        </div>
+      </div></div>
+    <div style="font-size:9px;color:var(--txt3);text-align:center;margin-top:9px;">${inf.maker||''}</div>`;
+  }
+  document.getElementById('espScreenModal').classList.add('open');
 }
 
 function renderInv(){
