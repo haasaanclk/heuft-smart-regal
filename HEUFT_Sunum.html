@@ -338,7 +338,7 @@ body.role-operator .admin-only{display:none!important;}
   <div style="display:flex;gap:7px;">
     <input class="fi" id="artSrch" data-i18n-ph="art_search_ph" placeholder="HBE numarası veya ürün adı..." oninput="renderArtFiltered()" style="flex:1;">
     <select class="sel2" id="artRegalFilter" onchange="renderArtFiltered()"><option value="" data-i18n="art_allregal">Tüm Regaller</option><option value="R1">R1</option><option value="R2">R2</option><option value="R3">R3</option><option value="R4">R4</option><option value="R5">R5</option></select>
-    <button class="bo" onclick="openArtModal()"><i class="ti ti-plus"></i><span data-i18n="btn_addart">Yeni Artikel Ekle</span></button>
+    <span style="font-size:10px;color:var(--txt3);display:flex;align-items:center;gap:5px;white-space:nowrap;"><i class="ti ti-info-circle" style="color:var(--org);"></i><span data-i18n="art_addhint">Ürün ekleme: Regal Yapısı → boş kutu</span></span>
   </div>
   <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
     <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txt3);cursor:pointer;"><input type="checkbox" id="artSelAll" onclick="toggleAllArts(this)" style="accent-color:var(--org);cursor:pointer;"><span data-i18n="btn_selectall">Tümünü Seç</span></label>
@@ -370,7 +370,7 @@ body.role-operator .admin-only{display:none!important;}
     <div class="mc"><div class="mcic ib"><i class="ti ti-percentage"></i></div><div class="mv" style="color:var(--blu);">99.2%</div><div class="ml" data-i18n="rf_succ">Başarı</div></div>
   </div>
   <div class="card"><div class="ch"><i class="ti ti-radio" style="color:var(--org);"></i><span class="ct" data-i18n="rf_title">RFID Tag Listesi</span>
-  <button class="bo" onclick="openRfidModal()"><i class="ti ti-plus"></i><span data-i18n="btn_addrfid">Tag Ekle</span></button></div>
+  <span style="margin-left:auto;font-size:10px;color:var(--txt3);display:flex;align-items:center;gap:5px;"><i class="ti ti-eye"></i><span data-i18n="rf_viewonly">Görüntüleme — tag'ler ürün eklenince oluşur</span></span></div>
   <div class="cb" id="rfidList"></div></div>
 </div>
 
@@ -589,6 +589,12 @@ body.role-operator .admin-only{display:none!important;}
       <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="am_maker" placeholder="HEUFT Systemtechnik GmbH"></div>
       <div><div class="fl" data-i18n="am_loc">Konum</div><input class="fi" id="am_loc" placeholder="R1-K1-B1"></div>
     </div>
+    <div id="am_rfidInfo" style="display:none;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:8px 11px;font-size:10px;color:var(--txt2);align-items:center;gap:8px;">
+      <i class="ti ti-radio" style="color:var(--org);font-size:14px;"></i>
+      <span style="color:var(--txt3);">RFID</span>:
+      <strong id="am_rfidId" style="color:var(--txt);"></strong>
+      <span id="am_rfidMeta" style="margin-left:auto;color:var(--txt3);"></span>
+    </div>
     <div class="frow">
       <div><div class="fl" data-i18n="am_ver">Version</div><input class="fi" id="am_ver" placeholder="V1.0"></div>
       <div><div class="fl" data-i18n="am_var">Variante</div><input class="fi" id="am_var" placeholder="Standard"></div>
@@ -656,8 +662,7 @@ body.role-operator .admin-only{display:none!important;}
     <div class="m-title"><span data-i18n="rd_title">RFID Detayı</span><span class="m-x" onclick="document.getElementById('rfidDetailModal').classList.remove('open')"><i class="ti ti-x"></i></span></div>
     <div id="rfidDetailBody" style="display:flex;flex-direction:column;gap:8px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button class="bd" id="rd_editBtn" data-i18n="btn_edit">Düzenle</button>
-      <button class="br" id="rd_delBtn" data-i18n="btn_delete">Sil</button>
+      <button class="bo" onclick="document.getElementById('rfidDetailModal').classList.remove('open')"><i class="ti ti-check"></i> <span data-i18n="btn_done">Tamam</span></button>
     </div>
   </div>
 </div>
@@ -765,7 +770,7 @@ tr:{
   rv_title:"Regal Görünümü — Anlık", low_title:"Düşük / Kritik Stok", recent_title:"Son İşlemler", waiting_mqtt:"MQTT verisi bekleniyor...",
   leg_full:"Dolu", leg_mid:"Kritik", leg_low:"Düşük", leg_empty:"Boş", leg_active:"Çağrılan",
   regal_title:"Regal Yapı Yönetimi", btn_addregal:"Regal Ekle", alert_addregal:"Yeni regal eklendi!",
-  art_search_ph:"HBE numarası veya ürün adı...", btn_addart:"Yeni Artikel Ekle",
+  art_search_ph:"HBE numarası veya ürün adı...", btn_addart:"Yeni Artikel Ekle", art_addhint:"Ürün ekleme: Regal Yapısı → boş kutu", rf_viewonly:"Görüntüleme — tag'ler ürün eklenince oluşur",
   lc_active:"Aktif Sensor", lc_prec:"Hassasiyet", lc_acc:"Doğruluk", lc_cal:"Kalibrasyon", lc_title:"LoadCell Ağırlık Monitörü",
   rf_active:"Aktif Tag", rf_weak:"Zayıf", rf_off:"Çevrimdışı", rf_succ:"Başarı", rf_title:"RFID Tag Listesi", btn_addrfid:"Tag Ekle",
   esp_title:"ESP32 2\" Ekran Önizlemeleri",
@@ -850,7 +855,7 @@ de:{
   rv_title:"Regalansicht — Live", low_title:"Niedriger / Kritischer Bestand", recent_title:"Letzte Transaktionen", waiting_mqtt:"Warte auf MQTT-Daten...",
   leg_full:"Voll", leg_mid:"Kritisch", leg_low:"Niedrig", leg_empty:"Leer", leg_active:"Abgerufen",
   regal_title:"Regalstruktur-Verwaltung", btn_addregal:"Regal hinzufügen", alert_addregal:"Neues Regal hinzugefügt!",
-  art_search_ph:"HBE-Nummer oder Produktname...", btn_addart:"Neuen Artikel hinzufügen",
+  art_search_ph:"HBE-Nummer oder Produktname...", btn_addart:"Neuen Artikel hinzufügen", art_addhint:"Produkt hinzufügen: Regalstruktur → leere Box", rf_viewonly:"Ansicht — Tags entstehen beim Produkt-Anlegen",
   lc_active:"Aktive Sensoren", lc_prec:"Genauigkeit", lc_acc:"Präzision", lc_cal:"Kalibrierung", lc_title:"LoadCell-Gewichtsmonitor",
   rf_active:"Aktive Tags", rf_weak:"Schwach", rf_off:"Offline", rf_succ:"Erfolgsrate", rf_title:"RFID-Tag-Liste", btn_addrfid:"Tag hinzufügen",
   esp_title:"ESP32 2\"-Display-Vorschau",
@@ -1987,10 +1992,12 @@ function openArtModal(idx, boxCtx){
     document.getElementById('am_strat').value=a.strategie||'FIFO';
     calcQty();
     if(a.img){ _modalImgData=a.img; _modalImgScale=a.imgScale||1; const im=document.getElementById('am_imgPrev'); im.src=a.img; im.style.display='block'; im.style.transform='scale('+_modalImgScale+')'; document.getElementById('am_imgIcon').style.display='none'; }
+    showArtRfid(a);
   } else {
     ['am_no','am_name','am_maker','am_loc','am_ver','am_var','am_din','am_unitw','am_boxw','am_avg','am_lead','am_beh'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('am_strat').value='FIFO';
     document.getElementById('am_qtyResult').textContent='0';
+    document.getElementById('am_rfidInfo').style.display='none';
     if(_artBoxTarget){
       /* Regal kutusundan yeni ürün: konum otomatik dolu (kutunun konumu) */
       const {ri,ki,bi}=_artBoxTarget;
@@ -1999,6 +2006,15 @@ function openArtModal(idx, boxCtx){
   }
 }
 function closeArtModal(){ document.getElementById('artModal').classList.remove('open'); }
+/* Ürünün bağlı RFID tag'ini Artikel penceresinde göster (salt görüntüleme) */
+function showArtRfid(a){
+  const box=document.getElementById('am_rfidInfo');
+  const r=window.RFIDS.find(x=>x.art===a.no);
+  if(!r){ box.style.display='none'; return; }
+  document.getElementById('am_rfidId').textContent=liveRfId(r);
+  document.getElementById('am_rfidMeta').textContent=`${r.sig} dBm · ${t(r.st)}`;
+  box.style.display='flex';
+}
 function calcQty(){
   const uw=parseFloat(document.getElementById('am_unitw').value)||0;
   const bw=parseFloat(document.getElementById('am_boxw').value)||0;
@@ -2058,6 +2074,14 @@ function saveArtikel(){
       b.art=no; b.qty=qty;
       b.s = qty<=2?'l':qty<15?'m':'f';
       delete b.pn; delete b.ver; delete b.vrt; delete b.maker;
+      rec._reg=ri;   /* ürünün regal indeksini sabitle */
+      /* Otomatik RFID tag oluştur → RFID Yönetim modülünde görünür */
+      const bloc=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
+      const rfId='RFID-'+bloc;
+      if(!window.RFIDS.some(r=>r.id===rfId || r.loc===bloc || r.art===no)){
+        window.RFIDS.push({id:rfId, art:no, loc:bloc, sig:-45, st:'aktif', _reg:ri});
+        logAudit('add_rfid',rfId);
+      }
     }
     _artBoxTarget=null;
   }
@@ -2091,8 +2115,7 @@ function renderRfidList(){
       <i class="ti ti-radio" style="color:${r.st==='aktif'?'var(--grn)':'var(--yel)'};font-size:14px;"></i>
       <div style="flex:1;"><div style="font-weight:600;">${liveRfId(r)}</div><div style="font-size:9px;color:var(--txt3);">${r.art}${art?' · '+artName(art):''} · ${r.sig} dBm</div></div>
       ${sigBar(r.sig)}<span class="tag ${r.st==='aktif'?'tok':'tw'}" style="margin-left:5px;">${t(r.st)}</span>
-      <button class="iconbtn" style="margin-left:6px;" onclick="event.stopPropagation();openRfidModal(${i})"><i class="ti ti-pencil"></i></button>
-      <button class="iconbtn" onclick="event.stopPropagation();deleteRfid(${i})"><i class="ti ti-trash"></i></button>
+      <i class="ti ti-chevron-right" style="margin-left:6px;color:var(--txt3);"></i>
     </div>`;
   }).join('');
   document.getElementById('rfid-actc').textContent=window.RFIDS.filter(r=>r.st==='aktif').length;
@@ -2158,8 +2181,6 @@ function showRfidDetail(idx){
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_status')}</span>${stTag(r.st==='aktif'?'ok':'low')}</div>
       ${art?`<div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_stock')}</span><strong>${art.qty} ${t('unit_pcs')}</strong></div>`:''}
     </div>`;
-  document.getElementById('rd_editBtn').onclick=()=>{document.getElementById('rfidDetailModal').classList.remove('open');openRfidModal(idx);};
-  document.getElementById('rd_delBtn').onclick=()=>{document.getElementById('rfidDetailModal').classList.remove('open');deleteRfid(idx);};
   document.getElementById('rfidDetailModal').classList.add('open');
 }
 
@@ -2450,7 +2471,7 @@ window.addEventListener('beforeunload', persistState);
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
-  const BUILD='b19'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b20'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
