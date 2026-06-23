@@ -1880,21 +1880,32 @@ function openChangePass(){
 /* ===== TOOLTIP (fare ile üzerine gelince açıklama) ===== */
 function setupTooltips(){
   const tip=document.getElementById('hoverTip');
+  if(!tip) return;
+  const hide=()=>{ tip.style.display='none'; };
+  /* Dokunmatik cihazlarda (telefon/tablet) tooltip KAPALI — takılı kalma ve
+     ekran kenarına kayma olmaz. Bilgi zaten öğeye dokununca açılan pencerede var. */
+  const canHover = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if(!canHover){ hide(); return; }
   document.addEventListener('mouseover',e=>{
     const el=e.target.closest('[data-tip]');
     if(el && el.getAttribute('data-tip')){ tip.textContent=el.getAttribute('data-tip'); tip.style.display='block'; }
   });
   document.addEventListener('mousemove',e=>{
     if(tip.style.display!=='block') return;
+    const w=tip.offsetWidth, h=tip.offsetHeight, M=8;
     let x=e.clientX+14, y=e.clientY+16;
-    const w=tip.offsetWidth, h=tip.offsetHeight;
-    if(x+w>window.innerWidth-8) x=e.clientX-w-12;
-    if(y+h>window.innerHeight-8) y=e.clientY-h-12;
+    if(x+w>window.innerWidth-M) x=e.clientX-w-12;
+    if(y+h>window.innerHeight-M) y=e.clientY-h-12;
+    /* Her durumda ekran içinde tut (yarısı kenarda kaybolmasın) */
+    x=Math.max(M, Math.min(x, window.innerWidth-w-M));
+    y=Math.max(M, Math.min(y, window.innerHeight-h-M));
     tip.style.left=x+'px'; tip.style.top=y+'px';
   });
-  document.addEventListener('mouseout',e=>{
-    if(e.target.closest('[data-tip]')) tip.style.display='none';
-  });
+  document.addEventListener('mouseout',e=>{ if(e.target.closest('[data-tip]')) hide(); });
+  /* Güvenlik ağı: kaydırma, tıklama veya dokunmada her ihtimale karşı gizle */
+  window.addEventListener('scroll', hide, true);
+  document.addEventListener('click', hide, true);
+  document.addEventListener('touchstart', hide, {passive:true});
 }
 /* Statik öğelere (nav, KPI) çift dilli tooltip ata */
 function applyTips(){
