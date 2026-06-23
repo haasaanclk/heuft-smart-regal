@@ -1126,10 +1126,18 @@ function renderRegalYapisi(){
   });
 }
 function renameRegal(ri){
-  const nv=prompt(t('rename_regal'),RD[ri].n);
+  const old=RD[ri].n;
+  const nv=prompt(t('rename_regal'),old);
   if(nv===null) return;
-  const name=nv.trim(); if(!name) return;
+  const name=nv.trim(); if(!name||name===old) return;
   RD[ri].n=name;
+  /* Konum referanslarını da güncelle: "OLD-Kx-By" → "NEW-Kx-By"
+     Böylece Artikel ürün penceresindeki konum ve RFID konumları da değişir. */
+  window.ARTS.forEach(a=>{ if(a.loc && a.loc.startsWith(old+'-')) a.loc = name + a.loc.slice(old.length); });
+  window.RFIDS.forEach(r=>{
+    if(r.loc && r.loc.startsWith(old+'-')) r.loc = name + r.loc.slice(old.length);
+    if(r.id  && r.id.startsWith('RFID-'+old+'-')) r.id = 'RFID-'+name + r.id.slice(('RFID-'+old).length);
+  });
   commit();
   showToast(t('toast_regalren'));
 }
