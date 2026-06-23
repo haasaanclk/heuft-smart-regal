@@ -1146,6 +1146,17 @@ function syncLoc(loc){
   const s=String(loc).indexOf('-');
   return RD[idx].n + (s>=0?String(loc).slice(s):'');
 }
+/* Ürünün konumunu CANLI ver: önce bağlı olduğu box'tan (en güvenilir),
+   yoksa loc metnini güncel regal adına göre düzelterek. Regal adı değişince
+   her zaman güncel adı gösterir. */
+function liveProdLoc(a){
+  if(!a) return '—';
+  for(let ri=0;ri<RD.length;ri++)
+    for(let ki=0;ki<RD[ri].kats.length;ki++)
+      for(let bi=0;bi<RD[ri].kats[ki].length;bi++)
+        if(RD[ri].kats[ki][bi].art===a.no) return `${RD[ri].n}-K${ki+1}-B${bi+1}`;
+  return a.loc ? syncLoc(a.loc) : '—';
+}
 /* Açılışta tüm konumları güncel regal adlarına göre onar (eski kopuklukları düzeltir) */
 function reconcileLocations(){
   window.ARTS.forEach(a=>{ if(a.loc) a.loc=syncLoc(a.loc); });
@@ -1459,7 +1470,7 @@ function renderPickList(q){
   const list=window.ARTS.filter(a=>!q||a.no.toLowerCase().includes(q)||a.n.toLowerCase().includes(q));
   el.innerHTML=list.slice(0,40).map(a=>`<label style="display:flex;align-items:center;gap:7px;padding:5px 7px;background:var(--bg4);border:1px solid var(--brd2);border-radius:6px;margin-bottom:4px;cursor:pointer;">
     <input type="checkbox" class="pick-cb" data-no="${a.no}" style="accent-color:var(--org);">
-    <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:var(--org);">${a.no}</div><div style="font-size:8px;color:var(--txt3);">${artName(a)} · ${a.loc}</div></div>
+    <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:var(--org);">${a.no}</div><div style="font-size:8px;color:var(--txt3);">${artName(a)} · ${liveProdLoc(a)}</div></div>
   </label>`).join('') || `<div style="font-size:10px;color:var(--txt3);padding:6px;">—</div>`;
 }
 function callArtikels(){
@@ -1641,7 +1652,7 @@ function renderArt(data){
     const fill=Math.min(100,Math.round((a.qty/scaleMax)*100));
     const ropPct=Math.min(100,Math.round((bestellpunkt(a)/scaleMax)*100));
     const minPct=Math.min(100,Math.round((mindestbestand(a)/scaleMax)*100));
-    const cardTip=`${a.no} · ${artName(a)}\n${t('am_maker')}: ${a.maker} · ${t('am_loc')}: ${a.loc}`+(a.ver||a.vrt?`\n${a.ver||''}${a.ver&&a.vrt?' / ':''}${a.vrt||''}`:'')+(a.din?`\nDIN/ISO: ${a.din}`:'')+`\n${t('kb_stock')}: ${a.qty} ${t('unit_pcs')} · ${t(a.st==='ok'?'stokta':a.st==='low'?'dusuk':'kritik')}`;
+    const cardTip=`${a.no} · ${artName(a)}\n${t('am_maker')}: ${a.maker} · ${t('am_loc')}: ${liveProdLoc(a)}`+(a.ver||a.vrt?`\n${a.ver||''}${a.ver&&a.vrt?' / ':''}${a.vrt||''}`:'')+(a.din?`\nDIN/ISO: ${a.din}`:'')+`\n${t('kb_stock')}: ${a.qty} ${t('unit_pcs')} · ${t(a.st==='ok'?'stokta':a.st==='low'?'dusuk':'kritik')}`;
     return `
     <div style="background:var(--bg4);border:1px solid var(--brd2);border-radius:9px;padding:10px;display:flex;gap:8px;" data-tip="${cardTip.replace(/"/g,'')}">
      <div style="flex:1;min-width:0;">
@@ -1661,7 +1672,7 @@ function renderArt(data){
       <div style="font-size:10px;color:var(--txt2);">${artName(a)}</div>
       ${(a.ver||a.vrt)?`<div style="font-size:8px;color:var(--blu);">${[a.ver,a.vrt].filter(Boolean).join(' · ')}</div>`:''}
       ${a.din?`<div style="font-size:8px;color:var(--cyan);">${a.din}</div>`:''}
-      <div style="font-size:9px;color:var(--txt3);">${a.maker} · ${a.loc}</div>
+      <div style="font-size:9px;color:var(--txt3);">${a.maker} · ${liveProdLoc(a)}</div>
       <div style="font-size:9px;color:var(--txt3);">${a.unitw}g/${t('unit_pcs')} · ${(a.boxw/1000).toFixed(2)}kg ${t('unit_box')}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
         <span style="font-size:13px;font-weight:700;">${a.qty} <span style="font-size:9px;font-weight:400;color:var(--txt3);">${t('unit_pcs')}</span></span>${stTag(a.st)}
@@ -1705,7 +1716,7 @@ function renderLowStock(){
   const data=lowStockData();
   el.innerHTML=data.length?data.map(a=>`
     <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 9px;background:var(--bg4);border-radius:7px;border:1px solid var(--brd2);margin-bottom:6px;">
-      <div><div style="font-weight:600;">${a.no}</div><div style="font-size:9px;color:var(--txt3);">${a.loc} · ${artName(a)}</div></div>
+      <div><div style="font-weight:600;">${a.no}</div><div style="font-size:9px;color:var(--txt3);">${liveProdLoc(a)} · ${artName(a)}</div></div>
       ${stTag(a.st)}
     </div>`).join('') : `<div style="font-size:10px;color:var(--txt3);padding:6px;">—</div>`;
   const sl=document.getElementById('sb-low'); if(sl) sl.textContent=window.ARTS.filter(a=>a.st!=='ok').length;
@@ -1946,7 +1957,7 @@ function openArtModal(idx, boxCtx){
   if(editing){
     const a=window.ARTS[idx]; normalizeKanban(a);
     const v=(id,val)=>document.getElementById(id).value=(val===undefined||val===null)?'':val;
-    v('am_no',a.no); v('am_name',a.n); v('am_maker',a.maker); v('am_loc',a.loc);
+    v('am_no',a.no); v('am_name',a.n); v('am_maker',a.maker); v('am_loc',liveProdLoc(a));
     v('am_ver',a.ver); v('am_var',a.vrt); v('am_din',a.din);
     v('am_unitw',a.unitw); v('am_boxw',a.boxw);
     v('am_avg',a.avgDaily); v('am_lead',a.leadTime); v('am_beh',a.behaelter);
@@ -2076,7 +2087,7 @@ function openRfidModal(idx){
     const r=window.RFIDS[idx];
     document.getElementById('rf_id').value=r.id;
     document.getElementById('rf_art').value=r.art;
-    document.getElementById('rf_loc').value=r.loc;
+    document.getElementById('rf_loc').value=syncLoc(r.loc);
     document.getElementById('rf_sig').value=r.sig;
   } else {
     document.getElementById('rf_id').value='';
@@ -2119,7 +2130,7 @@ function showRfidDetail(idx){
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;">
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_linkedart')}</span><strong>${r.art}${art?' — '+artName(art):''}</strong></div>
-      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_locinfo')}</span><strong>${r.loc}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_locinfo')}</span><strong>${syncLoc(r.loc)}</strong></div>
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_signal')}</span><strong>${r.sig} dBm</strong></div>
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_status')}</span>${stTag(r.st==='aktif'?'ok':'low')}</div>
       ${art?`<div style="display:flex;justify-content:space-between;"><span style="color:var(--txt3);">${t('rd_stock')}</span><strong>${art.qty} ${t('unit_pcs')}</strong></div>`:''}
