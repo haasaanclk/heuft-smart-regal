@@ -792,7 +792,7 @@ tr:{
   am_unitw:"Birim Ürün Ağırlığı (g)", am_boxw:"Kutu Aktif Ağırlığı (g)", am_calcqty:"Hesaplanan Adet:",
   am_calcnote:"(kutu ağırlığı ÷ birim ağırlık)", am_img:"Ürün Resmi Yükle", am_qr:"QR Kod Yükle",
   rm_title:"Yeni RFID Tag Ekle", rm_title_edit:"RFID Tag Düzenle", rm_tagid:"RFID Tag ID", rm_link:"Bağlı Artikel", rm_loc:"Regal Konumu", rm_sig:"Sinyal (dBm)",
-  rd_title:"RFID Detayı", btn_cancel:"İptal", btn_save:"Kaydet", btn_edit:"Düzenle", btn_delete:"Sil",
+  rd_title:"RFID Detayı", btn_cancel:"İptal", btn_save:"Kaydet", btn_edit:"Düzenle", btn_delete:"Sil", btn_open:"Aç",
   toast_artadded:"Artikel başarıyla eklendi!", toast_rfidadded:"RFID tag eklendi!", toast_rfidupdated:"RFID tag güncellendi!", toast_rfiddeleted:"RFID tag silindi!", toast_logo:"Logo güncellendi!", toast_imgset:"Ürün resmi güncellendi!",
   rd_linkedart:"Bağlı Ürün", rd_locinfo:"Regal Konumu", rd_signal:"Sinyal Gücü", rd_status:"Durum", rd_stock:"Stok",
   confirm_delete:"Bu RFID tag'i silmek istediğinize emin misiniz?", err_required:"Lütfen gerekli alanları doldurun!",
@@ -880,7 +880,7 @@ de:{
   am_unitw:"Einzelgewicht des Produkts (g)", am_boxw:"Aktives Boxgewicht (g)", am_calcqty:"Berechnete Menge:",
   am_calcnote:"(Boxgewicht ÷ Einzelgewicht)", am_img:"Produktbild hochladen", am_qr:"QR-Code hochladen",
   rm_title:"Neues RFID-Tag hinzufügen", rm_title_edit:"RFID-Tag bearbeiten", rm_tagid:"RFID-Tag-ID", rm_link:"Verknüpfter Artikel", rm_loc:"Regalposition", rm_sig:"Signal (dBm)",
-  rd_title:"RFID-Details", btn_cancel:"Abbrechen", btn_save:"Speichern", btn_edit:"Bearbeiten", btn_delete:"Löschen",
+  rd_title:"RFID-Details", btn_cancel:"Abbrechen", btn_save:"Speichern", btn_edit:"Bearbeiten", btn_delete:"Löschen", btn_open:"Öffnen",
   toast_artadded:"Artikel erfolgreich hinzugefügt!", toast_rfidadded:"RFID-Tag hinzugefügt!", toast_rfidupdated:"RFID-Tag aktualisiert!", toast_rfiddeleted:"RFID-Tag gelöscht!", toast_logo:"Logo aktualisiert!", toast_imgset:"Produktbild aktualisiert!",
   rd_linkedart:"Verknüpftes Produkt", rd_locinfo:"Regalposition", rd_signal:"Signalstärke", rd_status:"Status", rd_stock:"Bestand",
   confirm_delete:"Möchten Sie dieses RFID-Tag wirklich löschen?", err_required:"Bitte füllen Sie die Pflichtfelder aus!",
@@ -962,6 +962,12 @@ function applyI18n(){
   if(typeof renderKanban==='function') renderKanban();        /* Stok Bilgi Tablosu: status sütunu dil değişince çevrilsin */
   if(typeof renderPickList==='function') renderPickList(document.getElementById('pickSrch')?document.getElementById('pickSrch').value:'');
   if(typeof renderNotes==='function') renderNotes();
+  if(typeof renderLC==='function') renderLC();                  /* LoadCell "Kat" etiketi dil değişince çevrilsin */
+  if(typeof renderInv==='function') renderInv();
+  if(typeof renderActiveCalls==='function') renderActiveCalls();
+  /* Aktivite akışlarını temizle → yeni mesajlar seçilen dilde aksın */
+  ['actList','recentOps','rFeed'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; });
+  if(typeof actRows!=='undefined') actRows=[];
   if(typeof populateStatProduct==='function') populateStatProduct();
   if(typeof renderCustomize==='function') renderCustomize();
   if(typeof applyTips==='function') applyTips();
@@ -1027,8 +1033,8 @@ function sv(id,el){
   document.getElementById('view-'+id).classList.add('active');
   el.classList.add('active');
   if(window.innerWidth<=820) closeSidebar();   /* mobilde modül seçilince menüyü kapat */
-  /* İstatistik görünümü açılınca grafikleri doğru boyutta çiz */
-  if(id==='stat'){ if(typeof renderChart==='function') renderChart(curPeriod); if(typeof renderStatCharts==='function') renderStatCharts(); }
+  /* İstatistik görünümü açılınca grafikleri doğru boyutta çiz (layout sonrası) */
+  if(id==='stat'){ requestAnimationFrame(()=>{ if(typeof renderChart==='function') renderChart(curPeriod); if(typeof renderStatCharts==='function') renderStatCharts(); }); }
 }
 /* Akordeon sol menü: bölüm başlığına tıkla → altındaki modüller açılıp kapanır */
 function toggleNav(header){
@@ -1115,6 +1121,27 @@ function renderRegalVis(){
   });
 }
 
+/* Regal Yapısı: box seçme + silme akışı.
+   - Kutuya tıkla → seç (vurgula). Tekrar tıkla → seçimi bırak.
+   - "Aç" (kalem) → seçili kutuyu aç (ürün ekle/yönet).
+   - "Sil": kutu seçiliyse o KUTU silinir; seçili kutu yoksa KAT silinir. */
+let _selBox=null;
+function selectBox(ri,ki,bi){
+  if(_selBox&&_selBox.ri===ri&&_selBox.ki===ki&&_selBox.bi===bi) _selBox=null;
+  else _selBox={ri,ki,bi};
+  renderRegalYapisi();
+}
+function openSelBox(){ if(!_selBox) return; const {ri,ki,bi}=_selBox; openBoxModal(ri,ki,bi); }
+function delBoxAt(ri,ki,bi){
+  if(!RD[ri]||!RD[ri].kats[ki]) return;
+  if(RD[ri].kats[ki].length<=1){ showToast(t('min_box')); return; }
+  RD[ri].kats[ki].splice(bi,1);
+  _selBox=null; commit(); showToast(t('toast_boxdel'));
+}
+function delBoxOrKat(ri,ki){
+  if(_selBox&&_selBox.ri===ri&&_selBox.ki===ki){ delBoxAt(_selBox.ri,_selBox.ki,_selBox.bi); }
+  else { _selBox=null; removeKat(ri,ki); }
+}
 function renderRegalYapisi(){
   const ry=document.getElementById('regalYapisi'); ry.innerHTML='';
   RD.forEach((r,ri)=>{
@@ -1134,15 +1161,18 @@ function renderRegalYapisi(){
         <div style="display:flex;gap:4px;flex:1;flex-wrap:wrap;">`;
       kat.forEach((b,bi)=>{
         const inf=boxInfo(b); const has=!!inf.no;
+        const sel=_selBox&&_selBox.ri===ri&&_selBox.ki===ki&&_selBox.bi===bi;
         const tip=`${r.n}-K${ki+1}-B${bi+1}`+(has?` · ${inf.no} · ${inf.name}`+(inf.ver?` · ${inf.ver}`:'')+(inf.vrt?'/'+inf.vrt:'')+` · ${inf.qty} ${t('unit_pcs')}`:` · ${t('bx_empty')}`);
-        html+=`<div onclick="openBoxModal(${ri},${ki},${bi})" data-tip="${tip.replace(/"/g,'')}" style="cursor:pointer;width:38px;height:32px;border-radius:5px;border:1px solid ${has?'var(--org)':'var(--brd2)'};background:${has?'var(--orgl)':'var(--bg5)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+        html+=`<div onclick="selectBox(${ri},${ki},${bi})" data-tip="${tip.replace(/"/g,'')}" style="cursor:pointer;width:38px;height:32px;border-radius:5px;border:${sel?'2px solid var(--org)':('1px solid '+(has?'var(--org)':'var(--brd2)'))};box-shadow:${sel?'0 0 0 3px var(--orgl)':'none'};background:${has?'var(--orgl)':'var(--bg5)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
           <span style="font-size:7px;color:var(--txt3);">B${bi+1}</span>
           ${has?`<span style="font-size:8px;color:var(--org);font-weight:700;">${inf.qty||'●'}</span>`:`<i class="ti ti-plus" style="font-size:11px;color:var(--txt3);"></i>`}
         </div>`;
       });
+      const katSel=_selBox&&_selBox.ri===ri&&_selBox.ki===ki;
       html+=`</div>
+        ${katSel?`<button class="iconbtn admin-only" onclick="openSelBox()" title="${t('btn_open')}"><i class="ti ti-pencil"></i></button>`:''}
         <button class="iconbtn admin-only" onclick="addBox(${ri},${ki})" title="${t('add_box')}"><i class="ti ti-plus"></i></button>
-        <button class="iconbtn admin-only" onclick="removeKat(${ri},${ki})" title="${t('del_kat')}"><i class="ti ti-trash"></i></button>
+        <button class="br admin-only" onclick="delBoxOrKat(${ri},${ki})" title="${t('btn_delete')}"><i class="ti ti-trash"></i> ${t('btn_delete')}</button>
       </div>`;
     });
     card.innerHTML=html;
@@ -1975,6 +2005,7 @@ function doLogin(){
   if(!rec||rec.pass!==p){ err.textContent=t('auth_fail'); err.style.display='block'; return; }
   err.style.display='none';
   currentUser={user:u,role:rec.role,name:rec.name,initials:rec.initials};
+  try{ localStorage.setItem('heuft_session', JSON.stringify(currentUser)); }catch(e){}
   document.getElementById('authOverlay').style.display='none';
   applyAuth();
   if(typeof logAudit==='function'){ logAudit('login',u); renderAudit(); }
@@ -1987,9 +2018,15 @@ function applyAuth(){
   document.getElementById('pmRole').textContent = currentUser.role==='admin'?t('role_admin'):t('role_operator');
   document.body.classList.toggle('role-operator', currentUser.role==='operator');
 }
+/* Sayfa yenilenince oturumu koru → login'e yönlendirmesin */
+function restoreSession(){
+  try{ const s=localStorage.getItem('heuft_session'); if(s){ currentUser=JSON.parse(s); document.getElementById('authOverlay').style.display='none'; applyAuth(); return true; } }catch(e){}
+  return false;
+}
 function toggleProfile(){ document.getElementById('profileMenu').classList.toggle('open'); }
 function doLogout(){
   if(typeof logAudit==='function'){ logAudit('logout',currentUser?currentUser.user:'-'); }
+  try{ localStorage.removeItem('heuft_session'); }catch(e){}
   currentUser=null;
   document.getElementById('profileMenu').classList.remove('open');
   document.body.classList.remove('role-operator');
@@ -2075,6 +2112,7 @@ function openArtModal(idx, boxCtx){
     document.getElementById('am_strat').value=a.strategie||'FIFO';
     calcQty();
     if(a.img){ _modalImgData=a.img; _modalImgScale=a.imgScale||1; const im=document.getElementById('am_imgPrev'); im.src=a.img; im.style.display='block'; im.style.transform='scale('+_modalImgScale+')'; document.getElementById('am_imgIcon').style.display='none'; }
+    if(a.qr){ const q=document.getElementById('am_qrPrev'); q.src=a.qr; q.style.display='block'; const qi=document.getElementById('am_qrIcon'); if(qi)qi.style.display='none'; }   /* QR kodu koru */
     const r=window.RFIDS.find(x=>x.art===a.no);
     document.getElementById('am_rfid').value = r ? liveRfId(r) : 'RFID-'+liveProdLoc(a);
     document.getElementById('am_rfidsig').value = r ? r.sig : -45;
@@ -2134,7 +2172,8 @@ function saveArtikel(){
   const behaelter=parseFloat(document.getElementById('am_beh').value)||10;
   const strategie=document.getElementById('am_strat').value||'FIFO';
   const editIdx=parseInt(document.getElementById('am_editIdx').value);
-  const rec={no,n:name,nd:name,maker,loc,ver,vrt,din,unitw,boxw,qty,st,avgDaily,leadTime,behaelter,safetyDays:3,strategie,img:_modalImgData||'',imgScale:_modalImgScale||1,qr:document.getElementById('am_qrPrev').src||''};
+  const _qrEl=document.getElementById('am_qrPrev'); const qrVal=(_qrEl&&_qrEl.src&&_qrEl.src.indexOf('data:')===0)?_qrEl.src:'';
+  const rec={no,n:name,nd:name,maker,loc,ver,vrt,din,unitw,boxw,qty,st,avgDaily,leadTime,behaelter,safetyDays:3,strategie,img:_modalImgData||'',imgScale:_modalImgScale||1,qr:qrVal};
   if(editIdx>=0){
     const old=window.ARTS[editIdx];
     rec.nd=old.nd&&old.nd!==old.n?old.nd:name;
@@ -2273,7 +2312,7 @@ function renderLC(){
   const el=document.getElementById('lcBody'); el.innerHTML='';
   LCW.forEach((kat,ki)=>{
     const d=document.createElement('div'); d.style.marginBottom='10px';
-    d.innerHTML=`<div style="font-weight:600;color:var(--txt2);margin-bottom:6px;">Kat ${ki+1}</div>
+    d.innerHTML=`<div style="font-weight:600;color:var(--txt2);margin-bottom:6px;">${t('kat')} ${ki+1}</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">${kat.map((w,i)=>{
       const pct=w>0?Math.min(100,Math.round(w/2400*100)):0;
       const clr=pct>60?'var(--org)':pct>30?'var(--yel)':pct>0?'var(--red)':'#333';
@@ -2454,10 +2493,11 @@ function _gridColor(){ return 'rgba(128,128,128,.12)'; }
 function _tickColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--txt3').trim()||'#5a6380'; }
 function _legendColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--txt2').trim()||'#9ba3bf'; }
 function _destroyStat(k){ if(_statCharts[k]){ _statCharts[k].destroy(); delete _statCharts[k]; } }
+function _panelColor(){ return (getComputedStyle(document.documentElement).getPropertyValue('--panel').trim())||'#212532'; }
 function drawCircle(id,key,data,labels,colors,type){
   const ctx=document.getElementById(id); if(!ctx||typeof Chart==='undefined') return;
   _destroyStat(key);
-  _statCharts[key]=new Chart(ctx,{type:type||'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'var(--panel)',borderWidth:2}]},
+  _statCharts[key]=new Chart(ctx,{type:type||'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderColor:_panelColor(),borderWidth:2}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:type==='pie'?0:'56%',
       plugins:{legend:{position:'bottom',labels:{color:_legendColor(),font:{size:9},boxWidth:10,padding:6}}}}});
 }
@@ -2471,6 +2511,7 @@ function drawHBar(id,key,labels,data,colors){
 const STAT_PALETTE=['#ff5500','#4d9dff','#0fdb7e','#ffb800','#7f77dd','#22d3ee','#e24b4a','#a0d911'];
 function renderStatCharts(){
   if(typeof Chart==='undefined') return;
+  try{
   const arts=window.ARTS;
   /* 1) Stok durum dağılımı (oran) */
   const ok=arts.filter(a=>a.st==='ok').length, low=arts.filter(a=>a.st==='low').length, crit=arts.filter(a=>a.st==='crit').length;
@@ -2484,6 +2525,7 @@ function renderStatCharts(){
   /* 4) Regal bazında toplam stok (yatay bar) */
   const reg=RD.map((rr,ri)=>({n:rr.n, q:arts.filter(a=>prodRegalIndex(a)===ri).reduce((s,a)=>s+(a.qty||0),0)}));
   drawHBar('statRegalChart','regal',reg.map(x=>x.n),reg.map(x=>x.q),reg.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
+  }catch(e){ console.warn('renderStatCharts:',e); }
 }
 function applyDateRange(){
   const f=document.getElementById('statFrom').value, tt=document.getElementById('statTo').value;
@@ -2625,7 +2667,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
   restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
-  const BUILD='b27'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  restoreSession(); // oturum açıksa login'e yönlendirme
+  const BUILD='b28'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
