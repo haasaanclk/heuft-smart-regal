@@ -591,11 +591,9 @@ body.role-operator .admin-only{display:none!important;}
       <div><div class="fl" data-i18n="am_maker">Üretici</div><input class="fi" id="am_maker" placeholder="HEUFT Systemtechnik GmbH"></div>
       <div><div class="fl" data-i18n="am_loc">Konum</div><input class="fi" id="am_loc" placeholder="R1-K1-B1"></div>
     </div>
-    <div id="am_rfidInfo" style="display:none;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:8px 11px;font-size:10px;color:var(--txt2);align-items:center;gap:8px;">
-      <i class="ti ti-radio" style="color:var(--org);font-size:14px;"></i>
-      <span style="color:var(--txt3);">RFID</span>:
-      <strong id="am_rfidId" style="color:var(--txt);"></strong>
-      <span id="am_rfidMeta" style="margin-left:auto;color:var(--txt3);"></span>
+    <div class="frow">
+      <div><div class="fl"><i class="ti ti-radio" style="color:var(--org);"></i> <span data-i18n="am_rfid">RFID Tag ID</span></div><input class="fi" id="am_rfid" placeholder="RFID-R1-K1-B1"></div>
+      <div><div class="fl" data-i18n="am_rfidsig">RFID Sinyal (dBm)</div><input class="fi" type="number" id="am_rfidsig" placeholder="-45"></div>
     </div>
     <div class="frow">
       <div><div class="fl" data-i18n="am_ver">Version</div><input class="fi" id="am_ver" placeholder="V1.0"></div>
@@ -784,7 +782,7 @@ tr:{
   lang_title:"Dil Ayarları", set_mqtt:"MQTT Broker Ayarları", set_connect:"Bağlan", set_connected:"MQTT broker'a bağlanıldı!",
   set_hw:"Donanım Bilgisi", set_central:"Merkez Kontrol", set_sensor:"Sensör", set_reader:"Okuyucu", set_touch:"Dokunmatik Ekran",
   rp_feed:"MQTT Canlı Feed", rp_recent:"Son Aktiviteler",
-  am_title:"Yeni Artikel Ekle", am_no:"Artikel No (HBE)", am_name:"Ürün Adı", am_maker:"Üretici", am_loc:"Konum",
+  am_title:"Yeni Artikel Ekle", am_no:"Artikel No (HBE)", am_name:"Ürün Adı", am_maker:"Üretici", am_loc:"Konum", am_rfid:"RFID Tag ID", am_rfidsig:"RFID Sinyal (dBm)",
   am_unitw:"Birim Ürün Ağırlığı (g)", am_boxw:"Kutu Aktif Ağırlığı (g)", am_calcqty:"Hesaplanan Adet:",
   am_calcnote:"(kutu ağırlığı ÷ birim ağırlık)", am_img:"Ürün Resmi Yükle", am_qr:"QR Kod Yükle",
   rm_title:"Yeni RFID Tag Ekle", rm_title_edit:"RFID Tag Düzenle", rm_tagid:"RFID Tag ID", rm_link:"Bağlı Artikel", rm_loc:"Regal Konumu", rm_sig:"Sinyal (dBm)",
@@ -870,7 +868,7 @@ de:{
   lang_title:"Spracheinstellungen", set_mqtt:"MQTT-Broker-Einstellungen", set_connect:"Verbinden", set_connected:"Mit MQTT-Broker verbunden!",
   set_hw:"Hardware-Informationen", set_central:"Zentrale Steuerung", set_sensor:"Sensoren", set_reader:"Leser", set_touch:"Touchscreen",
   rp_feed:"MQTT-Live-Feed", rp_recent:"Letzte Aktivitäten",
-  am_title:"Neuen Artikel hinzufügen", am_no:"Artikelnummer (HBE)", am_name:"Produktname", am_maker:"Hersteller", am_loc:"Standort",
+  am_title:"Neuen Artikel hinzufügen", am_no:"Artikelnummer (HBE)", am_name:"Produktname", am_maker:"Hersteller", am_loc:"Standort", am_rfid:"RFID-Tag-ID", am_rfidsig:"RFID-Signal (dBm)",
   am_unitw:"Einzelgewicht des Produkts (g)", am_boxw:"Aktives Boxgewicht (g)", am_calcqty:"Berechnete Menge:",
   am_calcnote:"(Boxgewicht ÷ Einzelgewicht)", am_img:"Produktbild hochladen", am_qr:"QR-Code hochladen",
   rm_title:"Neues RFID-Tag hinzufügen", rm_title_edit:"RFID-Tag bearbeiten", rm_tagid:"RFID-Tag-ID", rm_link:"Verknüpfter Artikel", rm_loc:"Regalposition", rm_sig:"Signal (dBm)",
@@ -2034,29 +2032,26 @@ function openArtModal(idx, boxCtx){
     document.getElementById('am_strat').value=a.strategie||'FIFO';
     calcQty();
     if(a.img){ _modalImgData=a.img; _modalImgScale=a.imgScale||1; const im=document.getElementById('am_imgPrev'); im.src=a.img; im.style.display='block'; im.style.transform='scale('+_modalImgScale+')'; document.getElementById('am_imgIcon').style.display='none'; }
-    showArtRfid(a);
+    const r=window.RFIDS.find(x=>x.art===a.no);
+    document.getElementById('am_rfid').value = r ? liveRfId(r) : 'RFID-'+liveProdLoc(a);
+    document.getElementById('am_rfidsig').value = r ? r.sig : -45;
   } else {
     ['am_no','am_name','am_maker','am_loc','am_ver','am_var','am_din','am_unitw','am_boxw','am_avg','am_lead','am_beh'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('am_strat').value='FIFO';
     document.getElementById('am_qtyResult').textContent='0';
-    document.getElementById('am_rfidInfo').style.display='none';
+    document.getElementById('am_rfidsig').value=-45;
     if(_artBoxTarget){
-      /* Regal kutusundan yeni ürün: konum otomatik dolu (kutunun konumu) */
+      /* Regal kutusundan yeni ürün: konum + RFID tag otomatik dolu (kutunun konumu) */
       const {ri,ki,bi}=_artBoxTarget;
-      document.getElementById('am_loc').value=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
+      const loc=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
+      document.getElementById('am_loc').value=loc;
+      document.getElementById('am_rfid').value='RFID-'+loc;
+    } else {
+      document.getElementById('am_rfid').value='';
     }
   }
 }
 function closeArtModal(){ document.getElementById('artModal').classList.remove('open'); }
-/* Ürünün bağlı RFID tag'ini Artikel penceresinde göster (salt görüntüleme) */
-function showArtRfid(a){
-  const box=document.getElementById('am_rfidInfo');
-  const r=window.RFIDS.find(x=>x.art===a.no);
-  if(!r){ box.style.display='none'; return; }
-  document.getElementById('am_rfidId').textContent=liveRfId(r);
-  document.getElementById('am_rfidMeta').textContent=`${r.sig} dBm · ${t(r.st)}`;
-  box.style.display='flex';
-}
 function calcQty(){
   const uw=parseFloat(document.getElementById('am_unitw').value)||0;
   const bw=parseFloat(document.getElementById('am_boxw').value)||0;
@@ -2109,6 +2104,7 @@ function saveArtikel(){
     showToast(t('toast_artadded'));
   }
   /* Regal kutusundan eklendiyse: yeni ürünü o kutuya bağla (tek kaynak ARTS) */
+  let pReg=-1;
   if(_artBoxTarget){
     const {ri,ki,bi}=_artBoxTarget;
     if(RD[ri]&&RD[ri].kats[ki]&&RD[ri].kats[ki][bi]){
@@ -2116,16 +2112,19 @@ function saveArtikel(){
       b.art=no; b.qty=qty;
       b.s = qty<=2?'l':qty<15?'m':'f';
       delete b.pn; delete b.ver; delete b.vrt; delete b.maker;
-      rec._reg=ri;   /* ürünün regal indeksini sabitle */
-      /* Otomatik RFID tag oluştur → RFID Yönetim modülünde görünür */
-      const bloc=`${RD[ri].n}-K${ki+1}-B${bi+1}`;
-      const rfId='RFID-'+bloc;
-      if(!window.RFIDS.some(r=>r.id===rfId || r.loc===bloc || r.art===no)){
-        window.RFIDS.push({id:rfId, art:no, loc:bloc, sig:-45, st:'aktif', _reg:ri});
-        logAudit('add_rfid',rfId);
-      }
+      pReg=ri;
     }
     _artBoxTarget=null;
+  }
+  if(pReg<0) pReg=regIdxFromLoc(loc);
+  if(pReg>=0) rec._reg=pReg;   /* ürünün regal indeksini sabitle (tek kaynak Regal yapısı) */
+  /* RFID tag: FORMDA girilen değerle oluştur/güncelle → her modülde görünür (tek referans) */
+  const rfInput=document.getElementById('am_rfid').value.trim();
+  const rfSig=parseFloat(document.getElementById('am_rfidsig').value)||-45;
+  let existing=window.RFIDS.find(r=>r.art===no);
+  if(rfInput){
+    if(existing){ existing.id=rfInput; existing.loc=loc; existing.sig=rfSig; if(pReg>=0) existing._reg=pReg; }
+    else { window.RFIDS.push({id:rfInput, art:no, loc:loc, sig:rfSig, st:'aktif', _reg:pReg>=0?pReg:undefined}); logAudit('add_rfid',rfInput); }
   }
   commit();
   closeArtModal();
@@ -2513,7 +2512,7 @@ window.addEventListener('beforeunload', persistState);
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
-  const BUILD='b23'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b24'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
