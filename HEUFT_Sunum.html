@@ -331,7 +331,10 @@ body.role-operator .admin-only{display:none!important;}
 
 <!-- REGAL YAPISI -->
 <div class="view" id="view-regal">
-  <div class="card"><div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="regal_title">Regal Yapı Yönetimi</span><button class="bo admin-only" onclick="addRegal()"><i class="ti ti-plus"></i><span data-i18n="btn_addregal">Regal Ekle</span></button></div>
+  <div class="card"><div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="regal_title">Regal Yapı Yönetimi</span>
+    <button class="bo admin-only" onclick="addRegal()"><i class="ti ti-plus"></i><span data-i18n="btn_addregal">Regal Ekle</span></button>
+    <button class="br admin-only" onclick="delSelectedBoxes()"><i class="ti ti-trash"></i> <span data-i18n="btn_delsel">Seçilenleri Sil</span></button>
+    <button class="bd admin-only" onclick="openRegTrash()"><i class="ti ti-recycle"></i> <span data-i18n="btn_trash">Geri Dönüşüm Kutusu</span> <span id="regTrashCount" style="color:var(--org);font-weight:700;"></span></button></div>
   <div style="padding:8px 13px 0;font-size:10px;color:var(--txt3);display:flex;align-items:center;gap:5px;"><i class="ti ti-hand-finger" style="color:var(--org);"></i><span data-i18n="box_hint">Kutu: 1 tık → seç/sil · 2 tık → ürün ekle/aç</span></div>
   <div class="cb" id="regalYapisi"></div></div>
 </div>
@@ -715,6 +718,17 @@ body.role-operator .admin-only{display:none!important;}
   </div>
 </div>
 
+<!-- REGAL/KAT/BOX GERİ DÖNÜŞÜM MODAL -->
+<div class="modal-bg" id="regTrashModal">
+  <div class="modal-box">
+    <div class="m-title"><span><i class="ti ti-recycle" style="color:var(--org);"></i> <span data-i18n="regtrash_title">Regal / Kat / Box Geri Dönüşüm</span></span><span class="m-x" onclick="document.getElementById('regTrashModal').classList.remove('open')"><i class="ti ti-x"></i></span></div>
+    <div id="regTrashBody" style="max-height:340px;overflow-y:auto;"></div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="br" onclick="emptyRegTrash()"><i class="ti ti-trash-x"></i> <span data-i18n="btn_emptytrash">Kutuyu Boşalt</span></button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="backupFile" accept=".json,application/json" style="display:none" onchange="importBackup(this)">
 
 <!-- TAM EKRAN RESİM (Lightbox) -->
@@ -815,6 +829,7 @@ tr:{
   toast_artdel:"Artikel geri dönüşüm kutusuna taşındı!", toast_seldel:"{n} artikel silindi!", toast_restored:"Geri yüklendi!",
   toast_purged:"Kalıcı olarak silindi!", toast_trashempty:"Geri dönüşüm kutusu boşaltıldı!", toast_backup:"Yedek indirildi!", no_selection:"Hiçbir artikel seçilmedi!", err_import:"Geçersiz yedek dosyası!",
   trash_title:"Geri Dönüşüm Kutusu", trash_empty:"Geri dönüşüm kutusu boş", restore:"Geri Yükle", btn_emptytrash:"Kutuyu Boşalt",
+  regtrash_title:"Regal / Kat / Box Geri Dönüşüm", btn_restore:"Geri Yükle", restore_done:"Geri yüklendi", restore_fail:"Geri yüklenemedi (regal yok)",
   backup_title:"Yedekleme & Geri Yükleme", backup_export:"Yedek İndir (JSON)", backup_import:"Yedekten Geri Yükle", backup_desc:"Tüm artikel, RFID, regal ve geçmiş verileri tek dosyada yedekleyin.",
   repair_btn:"Konumları Onar", repair_hint:"Konumları Onar: veriyi SİLMEDEN tüm konumları Regal yapısına göre yeniden bağlar.", repair_done:"Konumlar Regal yapısına göre onarıldı",
   audit_title:"İşlem Geçmişi (Audit-Log)", audit_empty:"Henüz işlem kaydı yok",
@@ -903,6 +918,7 @@ de:{
   toast_artdel:"Artikel in den Papierkorb verschoben!", toast_seldel:"{n} Artikel gelöscht!", toast_restored:"Wiederhergestellt!",
   toast_purged:"Endgültig gelöscht!", toast_trashempty:"Papierkorb geleert!", toast_backup:"Sicherung heruntergeladen!", no_selection:"Kein Artikel ausgewählt!", err_import:"Ungültige Sicherungsdatei!",
   trash_title:"Papierkorb", trash_empty:"Papierkorb ist leer", restore:"Wiederherstellen", btn_emptytrash:"Papierkorb leeren",
+  regtrash_title:"Regal / Ebene / Box Papierkorb", btn_restore:"Wiederherstellen", restore_done:"Wiederhergestellt", restore_fail:"Wiederherstellung fehlgeschlagen (kein Regal)",
   backup_title:"Sicherung & Wiederherstellung", backup_export:"Sicherung herunterladen (JSON)", backup_import:"Aus Sicherung wiederherstellen", backup_desc:"Alle Artikel-, RFID-, Regal- und Verlaufsdaten in einer Datei sichern.",
   repair_btn:"Positionen reparieren", repair_hint:"Positionen reparieren: verknüpft alle Standorte neu gemäß Regalstruktur, OHNE Daten zu löschen.", repair_done:"Standorte gemäß Regalstruktur repariert",
   audit_title:"Änderungsverlauf (Audit-Log)", audit_empty:"Noch keine Einträge",
@@ -1013,6 +1029,8 @@ function refreshAll(){
   if(typeof renderStatCharts==='function'){ const sv=document.getElementById('view-stat'); if(sv&&sv.classList.contains('active')) renderStatCharts(); }
   const tc=document.getElementById('trashCount');
   if(tc) tc.textContent=window.TRASH&&window.TRASH.length?'('+window.TRASH.length+')':'';
+  const rtc=document.getElementById('regTrashCount');
+  if(rtc) rtc.textContent=window.REGTRASH&&window.REGTRASH.length?'('+window.REGTRASH.length+')':'';
 }
 Bus.on('data:changed', refreshAll);
 /* Her veri değişiminden sonra çağrılır → anlık eş zamanlı güncelleme */
@@ -1123,33 +1141,76 @@ function renderRegalVis(){
   });
 }
 
-/* Regal Yapısı: box seçme + silme akışı.
-   - Kutuya tıkla → seç (vurgula). Tekrar tıkla → seçimi bırak.
-   - "Aç" (kalem) → seçili kutuyu aç (ürün ekle/yönet).
-   - "Sil": kutu seçiliyse o KUTU silinir; seçili kutu yoksa KAT silinir. */
-let _selBox=null;
-/* Tek tık → seç (silme için). Çift tık → kutuyu aç (ürün ekle/yönet). */
+/* Regal Yapısı: ÇOKLU box seçimi + çöp kutusu.
+   - Kutuya 1 tık → seç/bırak (çoklu). 2 tık → aç (ürün ekle/yönet).
+   - "Sil" (kat): o katta seçili kutu(lar) varsa onları, yoksa katı siler (çöpe).
+   - "Seçilenleri Sil": tüm seçili kutuları çöpe. */
+let _selBoxes=new Set();
+const _bk=(ri,ki,bi)=>ri+'-'+ki+'-'+bi;
 let _boxClickTimer=null;
 function boxClick(ri,ki,bi){
   if(_boxClickTimer){ clearTimeout(_boxClickTimer); _boxClickTimer=null; openBoxModal(ri,ki,bi); return; }
   _boxClickTimer=setTimeout(()=>{ _boxClickTimer=null; selectBox(ri,ki,bi); }, 240);
 }
 function selectBox(ri,ki,bi){
-  if(_selBox&&_selBox.ri===ri&&_selBox.ki===ki&&_selBox.bi===bi) _selBox=null;
-  else _selBox={ri,ki,bi};
+  const k=_bk(ri,ki,bi);
+  if(_selBoxes.has(k)) _selBoxes.delete(k); else _selBoxes.add(k);
   renderRegalYapisi();
 }
-function openSelBox(){ if(!_selBox) return; const {ri,ki,bi}=_selBox; openBoxModal(ri,ki,bi); }
-function delBoxAt(ri,ki,bi){
-  if(!RD[ri]||!RD[ri].kats[ki]) return;
-  if(RD[ri].kats[ki].length<=1){ showToast(t('min_box')); return; }
-  RD[ri].kats[ki].splice(bi,1);
-  _selBox=null; commit(); showToast(t('toast_boxdel'));
+function openSelBox(ri,ki){
+  /* o kattaki tek seçili kutuyu aç */
+  const keys=[..._selBoxes].filter(k=>k.startsWith(ri+'-'+ki+'-'));
+  if(keys.length){ const [a,b,c]=keys[0].split('-').map(Number); openBoxModal(a,b,c); }
+}
+function _trashBox(ri,ki,bi){
+  window.REGTRASH.unshift({type:'box',regalName:RD[ri].n,regIdx:ri,katIdx:ki,boxIdx:bi,data:JSON.parse(JSON.stringify(RD[ri].kats[ki][bi])),ts:Date.now()});
 }
 function delBoxOrKat(ri,ki){
-  if(_selBox&&_selBox.ri===ri&&_selBox.ki===ki){ delBoxAt(_selBox.ri,_selBox.ki,_selBox.bi); }
-  else { _selBox=null; removeKat(ri,ki); }
+  const keys=[..._selBoxes].filter(k=>k.startsWith(ri+'-'+ki+'-')).map(k=>k.split('-').map(Number));
+  if(keys.length){
+    if(RD[ri].kats[ki].length-keys.length<1){ showToast(t('min_box')); return; }
+    keys.sort((a,b)=>b[2]-a[2]).forEach(([a,b,c])=>{ _trashBox(a,b,c); RD[a].kats[b].splice(c,1); _selBoxes.delete(_bk(a,b,c)); });
+    clearRegCache(); commit(); showToast(keys.length+' '+t('toast_boxdel'));
+  } else { removeKat(ri,ki); }
 }
+function delSelectedBoxes(){
+  if(!_selBoxes.size){ showToast(t('pick_select')); return; }
+  const byKat={};
+  _selBoxes.forEach(k=>{ const [ri,ki,bi]=k.split('-').map(Number); (byKat[ri+'-'+ki]=byKat[ri+'-'+ki]||[]).push(bi); });
+  let n=0;
+  Object.keys(byKat).forEach(kk=>{ const [ri,ki]=kk.split('-').map(Number);
+    byKat[kk].sort((a,b)=>b-a).forEach(bi=>{ if(RD[ri]&&RD[ri].kats[ki]&&RD[ri].kats[ki].length>1){ _trashBox(ri,ki,bi); RD[ri].kats[ki].splice(bi,1); n++; } });
+  });
+  _selBoxes.clear(); clearRegCache(); commit(); showToast(n+' '+t('toast_boxdel'));
+}
+function clearRegCache(){ window.ARTS.forEach(a=>delete a._reg); window.RFIDS.forEach(r=>delete r._reg); }
+/* ===== REGAL/KAT/BOX ÇÖP KUTUSU ===== */
+function openRegTrash(){ renderRegTrash(); document.getElementById('regTrashModal').classList.add('open'); }
+function renderRegTrash(){
+  const el=document.getElementById('regTrashBody'); if(!el) return;
+  const TY={regal:t('del_regal'),kat:t('kat'),box:'Box'};
+  if(!window.REGTRASH.length){ el.innerHTML=`<div style="color:var(--txt3);font-size:11px;text-align:center;padding:14px;">${t('trash_empty')}</div>`; return; }
+  el.innerHTML=window.REGTRASH.map((it,i)=>{
+    const label = it.type==='regal'?`${TY.regal}: ${it.data.n||it.regalName}` : it.type==='kat'?`${it.regalName} · ${TY.kat}` : `${it.regalName} · Box`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg4);border:1px solid var(--brd2);border-radius:7px;margin-bottom:6px;">
+      <i class="ti ti-${it.type==='regal'?'server':it.type==='kat'?'layout-rows':'box'}" style="color:var(--org);"></i>
+      <div style="flex:1;font-size:11px;">${label}<div style="font-size:8px;color:var(--txt3);">${new Date(it.ts).toLocaleString(curLang==='de'?'de-DE':'tr-TR')}</div></div>
+      <button class="bo" style="padding:3px 8px;font-size:10px;" onclick="restoreRegItem(${i})"><i class="ti ti-arrow-back-up"></i> ${t('btn_restore')}</button>
+      <button class="iconbtn" onclick="regTrashDelete(${i})"><i class="ti ti-trash"></i></button>
+    </div>`;
+  }).join('');
+}
+function restoreRegItem(i){
+  const it=window.REGTRASH[i]; if(!it) return;
+  if(it.type==='regal'){ RD.splice(Math.min(it.idx,RD.length),0,it.data); }
+  else { let ri=RD.findIndex(r=>r.n===it.regalName); if(ri<0) ri=Math.min(it.regIdx,RD.length-1); if(ri<0){ showToast(t('restore_fail')); return; }
+    if(it.type==='kat'){ RD[ri].kats.splice(Math.min(it.katIdx,RD[ri].kats.length),0,it.data); }
+    else { const ki=Math.min(it.katIdx,RD[ri].kats.length-1); if(ki<0){ showToast(t('restore_fail')); return; } RD[ri].kats[ki].splice(Math.min(it.boxIdx,RD[ri].kats[ki].length),0,it.data); }
+  }
+  window.REGTRASH.splice(i,1); clearRegCache(); commit(); renderRegTrash(); showToast(t('restore_done'));
+}
+function regTrashDelete(i){ window.REGTRASH.splice(i,1); commit(); renderRegTrash(); }
+function emptyRegTrash(){ window.REGTRASH=[]; commit(); renderRegTrash(); showToast(t('toast_emptytrash')); }
 function renderRegalYapisi(){
   const ry=document.getElementById('regalYapisi'); ry.innerHTML='';
   RD.forEach((r,ri)=>{
@@ -1169,16 +1230,16 @@ function renderRegalYapisi(){
         <div style="display:flex;gap:4px;flex:1;flex-wrap:wrap;">`;
       kat.forEach((b,bi)=>{
         const inf=boxInfo(b); const has=!!inf.no;
-        const sel=_selBox&&_selBox.ri===ri&&_selBox.ki===ki&&_selBox.bi===bi;
+        const sel=_selBoxes.has(_bk(ri,ki,bi));
         const tip=`${r.n}-K${ki+1}-B${bi+1}`+(has?` · ${inf.no} · ${inf.name}`+(inf.ver?` · ${inf.ver}`:'')+(inf.vrt?'/'+inf.vrt:'')+` · ${inf.qty} ${t('unit_pcs')}`:` · ${t('bx_empty')}`);
         html+=`<div onclick="boxClick(${ri},${ki},${bi})" data-tip="${tip.replace(/"/g,'')}" style="cursor:pointer;width:38px;height:32px;border-radius:5px;border:${sel?'2px solid var(--org)':('1px solid '+(has?'var(--org)':'var(--brd2)'))};box-shadow:${sel?'0 0 0 3px var(--orgl)':'none'};background:${has?'var(--orgl)':'var(--bg5)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
           <span style="font-size:7px;color:var(--txt3);">B${bi+1}</span>
           ${has?`<span style="font-size:8px;color:var(--org);font-weight:700;">${inf.qty||'●'}</span>`:`<i class="ti ti-plus" style="font-size:11px;color:var(--txt3);"></i>`}
         </div>`;
       });
-      const katSel=_selBox&&_selBox.ri===ri&&_selBox.ki===ki;
+      const katSel=[..._selBoxes].some(k=>k.startsWith(ri+'-'+ki+'-'));
       html+=`</div>
-        ${katSel?`<button class="iconbtn admin-only" onclick="openSelBox()" title="${t('btn_open')}"><i class="ti ti-pencil"></i></button>`:''}
+        ${katSel?`<button class="iconbtn admin-only" onclick="openSelBox(${ri},${ki})" title="${t('btn_open')}"><i class="ti ti-pencil"></i></button>`:''}
         <button class="iconbtn admin-only" onclick="addBox(${ri},${ki})" title="${t('add_box')}"><i class="ti ti-plus"></i></button>
         <button class="br admin-only" onclick="delBoxOrKat(${ri},${ki})" title="${t('btn_delete')}"><i class="ti ti-trash"></i> ${t('btn_delete')}</button>
       </div>`;
@@ -1314,9 +1375,9 @@ function addRegal(){
 }
 function removeRegal(ri){
   if(!confirm(t('confirm_delregal'))) return;
+  window.REGTRASH.unshift({type:'regal',regalName:RD[ri].n,idx:ri,data:JSON.parse(JSON.stringify(RD[ri])),ts:Date.now()});
   RD.splice(ri,1);
-  RD.forEach((r,i)=>r.n='R'+(i+1));
-  commit();
+  clearRegCache(); commit();   /* isimler korunur (numaralandırma yok) */
   showToast(t('toast_regaldel'));
 }
 function addKat(ri){
@@ -1327,8 +1388,9 @@ function addKat(ri){
 }
 function removeKat(ri,ki){
   if(RD[ri].kats.length<=1){ showToast(t('min_kat')); return; }
+  window.REGTRASH.unshift({type:'kat',regalName:RD[ri].n,regIdx:ri,katIdx:ki,data:JSON.parse(JSON.stringify(RD[ri].kats[ki])),ts:Date.now()});
   RD[ri].kats.splice(ki,1);
-  commit();
+  clearRegCache(); commit();
   showToast(t('toast_katdel'));
 }
 function addBox(ri,ki){
@@ -1484,7 +1546,7 @@ function openQr(no){
 }
 
 /* ===== FAZ 2: GERİ DÖNÜŞÜM KUTUSU · AUDIT-LOG · BACKUP ===== */
-window.TRASH=[]; window.AUDIT=[];
+window.TRASH=[]; window.AUDIT=[]; window.REGTRASH=[];
 function logAudit(action,target){
   window.AUDIT.unshift({user:'HB',action,target,ts:new Date().toLocaleString(curLang==='de'?'de-DE':'tr-TR')});
   if(window.AUDIT.length>200) window.AUDIT.pop();
@@ -2635,6 +2697,7 @@ function persistState(){
       RFIDS:window.RFIDS,
       RD:RD,
       TRASH:window.TRASH,
+      REGTRASH:window.REGTRASH,
       AUDIT:window.AUDIT,
       ORDERLIST:[...(window.ORDERLIST||[])],
       ORDEREXCLUDE:[...(window.ORDEREXCLUDE||[])]
@@ -2652,6 +2715,7 @@ function restoreState(){
     if(Array.isArray(d.RFIDS)) window.RFIDS=d.RFIDS;
     if(Array.isArray(d.RD))    RD=d.RD;
     if(Array.isArray(d.TRASH)) window.TRASH=d.TRASH;
+    if(Array.isArray(d.REGTRASH)) window.REGTRASH=d.REGTRASH;
     if(Array.isArray(d.AUDIT)) window.AUDIT=d.AUDIT;
     if(Array.isArray(d.ORDERLIST))    window.ORDERLIST=new Set(d.ORDERLIST);
     if(Array.isArray(d.ORDEREXCLUDE)) window.ORDEREXCLUDE=new Set(d.ORDEREXCLUDE);
@@ -2676,7 +2740,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
   restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
   restoreSession(); // oturum açıksa login'e yönlendirme
-  const BUILD='b29'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b30'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
