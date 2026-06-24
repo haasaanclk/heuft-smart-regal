@@ -311,11 +311,11 @@ body.role-operator .admin-only{display:none!important;}
       <input class="fi" id="pickSrch" data-i18n-ph="pick_search" placeholder="Artikel no ile ara ve seç..." oninput="renderPickList(this.value)" style="flex:1;">
       <button class="bo" onclick="callArtikels()"><i class="ti ti-bell-ringing"></i> <span data-i18n="pick_call">Çağır</span></button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div id="pickList" style="max-height:140px;overflow-y:auto;"></div>
-      <div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch;">
+      <div id="pickList" style="min-height:140px;overflow-y:auto;"></div>
+      <div style="display:flex;flex-direction:column;min-height:140px;">
         <div class="pt2" data-i18n="pick_active">Aktif Çağrılar (ESP32)</div>
-        <div id="pickActive"></div>
+        <div id="pickActive" style="flex:1;"></div>
       </div>
     </div>
   </div></div>
@@ -2574,7 +2574,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
   restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
-  const BUILD='b25'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b26'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
