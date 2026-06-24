@@ -9,7 +9,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --org:#ff5500;--org2:#cc4400;--orgl:rgba(255,85,0,0.12);
-  --bg:#1a1d27;--bg3:#252a38;--bg4:#2d3245;--bg5:#333a52;
+  --bg:#1a1d27;--bg3:#252a38;--bg4:#2d3245;--bg5:#333a52;--panel:#212532;
   --brd:rgba(255,255,255,0.07);--brd2:rgba(255,255,255,0.12);
   --txt:#eef0f8;--txt2:#9ba3bf;--txt3:#5a6380;
   --grn:#0fdb7e;--grn2:rgba(15,219,126,0.12);
@@ -20,7 +20,7 @@
 }
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:12px;}
 .app{display:flex;flex-direction:column;height:100vh;min-height:600px;}
-.tb{height:52px;background:rgba(33,37,50,0.95);border-bottom:1px solid var(--brd2);display:flex;align-items:center;padding:0 16px;gap:14px;flex-shrink:0;position:relative;z-index:10;}
+.tb{height:52px;background:var(--panel);border-bottom:1px solid var(--brd2);display:flex;align-items:center;padding:0 16px;gap:14px;flex-shrink:0;position:relative;z-index:10;}
 .logo-zone{display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;}
 .logo-avatar{position:relative;width:38px;height:38px;border-radius:50%;flex-shrink:0;}
 .logo-avatar input[type=file]{display:none;}
@@ -48,7 +48,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .langbtn{padding:4px 9px;border-radius:5px;border:none;background:transparent;color:var(--txt3);font-size:10px;cursor:pointer;font-weight:600;}
 .langbtn.on{background:var(--org);color:#fff;}
 .body{display:flex;flex:1;overflow:hidden;}
-.sb{width:198px;background:rgba(33,37,50,.8);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.sb{width:198px;background:var(--panel);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
 .ns{font-size:9px;color:var(--txt3);letter-spacing:.8px;text-transform:uppercase;padding:12px 14px 4px;font-weight:600;}
 /* ===== AKORDEON SOL MENÜ ===== */
 .ns.acc{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;
@@ -74,7 +74,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .view{display:none;flex-direction:column;gap:11px;animation:fadeIn .25s ease;}
 .view.active{display:flex;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.rp{width:238px;background:rgba(33,37,50,.8);border-left:1px solid var(--brd);padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:11px;flex-shrink:0;}
+.rp{width:238px;background:var(--panel);border-left:1px solid var(--brd);padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:11px;flex-shrink:0;}
 .card{background:var(--bg3);border:1px solid var(--brd2);border-radius:10px;overflow:hidden;box-shadow:var(--sh);}
 .ch{background:linear-gradient(135deg,var(--bg4),var(--bg3));border-bottom:1px solid var(--brd);padding:9px 13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ct{font-size:12px;font-weight:600;flex:1;}
@@ -122,6 +122,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--tx
 .pbtn{padding:4px 9px;border-radius:5px;border:1px solid var(--brd2);background:var(--bg4);color:var(--txt3);font-size:10px;cursor:pointer;font-weight:600;}
 .pbtn.on{background:var(--org);color:#fff;border-color:var(--org);}
 .thmdot{width:28px;height:28px;border-radius:50%;border:2px solid var(--brd2);cursor:pointer;}
+.bd.thm-on{border-color:var(--org);background:var(--orgl);color:var(--org);}
 .thmdot:hover{border-color:#fff;}
 #hoverTip{position:fixed;z-index:9999;background:var(--bg5);border:1px solid var(--org);border-radius:7px;padding:7px 10px;font-size:10px;color:var(--txt);max-width:260px;box-shadow:0 6px 22px rgba(0,0,0,.6);pointer-events:none;display:none;line-height:1.55;white-space:pre-line;}
 body.role-operator .admin-only{display:none!important;}
@@ -417,6 +418,13 @@ body.role-operator .admin-only{display:none!important;}
       <option value="'Times New Roman',serif">Times New Roman</option>
       <option value="'Courier New',monospace">Courier / Mono</option>
     </select>
+    <div class="fl" style="margin-top:12px;" data-i18n="thm_mode">Görünüm Modu</div>
+    <div style="display:flex;gap:6px;">
+      <button class="bd" id="dm_dark" onclick="setMode('dark')" style="flex:1;"><i class="ti ti-moon"></i> <span data-i18n="thm_dark">Gece</span></button>
+      <button class="bd" id="dm_light" onclick="setMode('light')" style="flex:1;"><i class="ti ti-sun"></i> <span data-i18n="thm_light">Gündüz</span></button>
+    </div>
+    <div class="fl" style="margin-top:12px;display:flex;justify-content:space-between;"><span data-i18n="thm_bright">Yazı Parlaklığı (gri → beyaz)</span><span id="dm_brightVal" style="color:var(--org);">100%</span></div>
+    <input type="range" id="dm_bright" min="40" max="100" value="100" oninput="setTextBright(this.value)" style="width:100%;accent-color:var(--org);cursor:pointer;">
     <div id="dm_preview" style="margin-top:12px;background:var(--bg);border:1px solid var(--brd2);border-radius:8px;padding:12px;text-align:center;color:var(--txt);font-size:14px;">
       <span style="color:var(--org);font-weight:800;">HEUFT</span> <span data-i18n="thm_preview">Önizleme — HEUFT Smart Regal 123</span>
     </div>
@@ -440,7 +448,11 @@ body.role-operator .admin-only{display:none!important;}
 
 <!-- INVENTUR -->
 <div class="view" id="view-inv">
-  <div class="card"><div class="ch"><i class="ti ti-clipboard-check" style="color:var(--org);"></i><span class="ct" data-i18n="inv_title">İnventür Listesi</span></div>
+  <div class="card"><div class="ch"><i class="ti ti-clipboard-check" style="color:var(--org);"></i><span class="ct" data-i18n="inv_title">İnventür Listesi</span>
+  <div style="margin-left:auto;display:flex;gap:6px;">
+    <button class="bd" onclick="invCSV()"><i class="ti ti-file-spreadsheet"></i> CSV</button>
+    <button class="bd" onclick="invPDF()"><i class="ti ti-file-type-pdf"></i> PDF</button>
+  </div></div>
   <div class="cb" style="padding:0;"><table class="dt2"><thead><tr><th data-i18n="th_art">Artikel</th><th data-i18n="th_prod">Ürün</th><th data-i18n="th_sys">Sistem</th><th data-i18n="th_count">Sayım</th><th data-i18n="th_diff">Fark</th><th data-i18n="th_status">Durum</th></tr></thead><tbody id="invBody"></tbody></table></div></div>
 </div>
 
@@ -509,22 +521,8 @@ body.role-operator .admin-only{display:none!important;}
   <div class="cb"><div class="langsw" style="width:fit-content;"><button class="langbtn on" id="lbTR2" onclick="setLang('tr')">Türkçe</button><button class="langbtn" id="lbDE2" onclick="setLang('de')">Deutsch</button></div></div></div>
   <div class="card"><div class="ch"><i class="ti ti-palette" style="color:var(--org);"></i><span class="ct" data-i18n="thm_title">Tema & Yazı Tipi</span></div>
   <div class="cb">
-    <button class="bo" onclick="openDesignModal()" style="margin-bottom:12px;"><i class="ti ti-adjustments-alt"></i> <span data-i18n="thm_open">Renk & Yazı Tipi Seç</span></button>
-    <div class="fl" data-i18n="thm_accent">Vurgu Rengi</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <button class="thmdot" onclick="setTheme('#ff5500','#cc4400')" style="background:#ff5500;" title="HEUFT Orange"></button>
-      <button class="thmdot" onclick="setTheme('#4d9dff','#2d6fc4')" style="background:#4d9dff;" title="Blau"></button>
-      <button class="thmdot" onclick="setTheme('#0fdb7e','#0a9c5a')" style="background:#0fdb7e;" title="Grün"></button>
-      <button class="thmdot" onclick="setTheme('#7f77dd','#5a52b0')" style="background:#7f77dd;" title="Violett"></button>
-      <button class="thmdot" onclick="setTheme('#e24b4a','#a32d2d')" style="background:#e24b4a;" title="Rot"></button>
-    </div>
-    <div class="fl" data-i18n="thm_font">Yazı Tipi</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <button class="bd" onclick="setFont(\"'Segoe UI',Arial,sans-serif\")">Segoe UI</button>
-      <button class="bd" onclick="setFont(\"Verdana,Geneva,sans-serif\")">Verdana</button>
-      <button class="bd" onclick="setFont(\"Georgia,serif\")" style="font-family:Georgia,serif;">Georgia</button>
-      <button class="bd" onclick="setFont(\"'Courier New',monospace\")" style="font-family:monospace;">Mono</button>
-    </div>
+    <button class="bo" onclick="openDesignModal()"><i class="ti ti-adjustments-alt"></i> <span data-i18n="thm_open">Renk & Yazı Tipi Seç</span></button>
+    <div style="font-size:10px;color:var(--txt3);margin-top:8px;" data-i18n="thm_settings_hint">Vurgu rengi, yazı tipi, yazı parlaklığı ve gece/gündüz modu buradan ayarlanır.</div>
   </div></div>
   <div class="card"><div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="set_mqtt">MQTT Broker Ayarları</span></div>
   <div class="cb"><div class="frow"><div><div class="fl">Host</div><input class="fi" value="mqtt.heuft.local"></div><div><div class="fl">Port</div><input class="fi" value="1883"></div></div>
@@ -838,6 +836,7 @@ tr:{
   art_allregal:"Tüm Regaller", st_allprod:"Tüm Ürünler",
   thm_title:"Tema & Yazı Tipi", thm_accent:"Vurgu Rengi", thm_font:"Yazı Tipi",
   thm_open:"Renk & Yazı Tipi Seç", thm_custom:"Özel Renk", thm_preview:"Önizleme — HEUFT Smart Regal 123", btn_done:"Tamam",
+  thm_mode:"Görünüm Modu", thm_dark:"Gece", thm_light:"Gündüz", thm_bright:"Yazı Parlaklığı (gri → beyaz)", thm_settings_hint:"Vurgu rengi, yazı tipi, yazı parlaklığı ve gece/gündüz modu buradan ayarlanır.",
   esp_hint:"Kutuya tıklayın → ESP ekranı", esp_screen:"ESP32 Ekranı", esp_empty:"Bu kutuda ürün yok", esp_nobox:"Henüz box tanımlı değil",
   tip_dash:"Genel bakış paneli — özet, regal durumu, çağırma", tip_regal:"Raf/kat/box yapısı yönetimi ve ürün atama", tip_art:"Ürün/artikel listesi — ekle, düzenle, sil",
   tip_lc:"LoadCell ağırlık sensörü monitörü", tip_rfid:"RFID etiket yönetimi ve sinyal takibi", tip_esp:"ESP32 dokunmatik ekran önizlemeleri",
@@ -924,6 +923,7 @@ de:{
   art_allregal:"Alle Regale", st_allprod:"Alle Produkte",
   thm_title:"Design & Schriftart", thm_accent:"Akzentfarbe", thm_font:"Schriftart",
   thm_open:"Farbe & Schriftart wählen", thm_custom:"Eigene Farbe", thm_preview:"Vorschau — HEUFT Smart Regal 123", btn_done:"Fertig",
+  thm_mode:"Ansichtsmodus", thm_dark:"Nacht", thm_light:"Tag", thm_bright:"Texthelligkeit (grau → weiß)", thm_settings_hint:"Akzentfarbe, Schriftart, Texthelligkeit und Tag/Nacht-Modus hier einstellen.",
   esp_hint:"Box anklicken → ESP-Display", esp_screen:"ESP32-Display", esp_empty:"Keine Ware in dieser Box", esp_nobox:"Noch keine Box definiert",
   tip_dash:"Übersicht — Zusammenfassung, Regalstatus, Abruf", tip_regal:"Regal-/Ebenen-/Box-Struktur & Produktzuordnung", tip_art:"Artikelliste — hinzufügen, bearbeiten, löschen",
   tip_lc:"LoadCell-Gewichtssensor-Monitor", tip_rfid:"RFID-Tag-Verwaltung & Signalverfolgung", tip_esp:"ESP32-Touchscreen-Vorschau",
@@ -1876,12 +1876,6 @@ function setWidget(id,on){ widgetVis[id]=on; const el=document.getElementById(id
 
 /* ===== TEMA & YAZI TİPİ ===== */
 function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
-function setTheme(c,c2){
-  document.documentElement.style.setProperty('--org',c);
-  document.documentElement.style.setProperty('--org2',c2);
-  document.documentElement.style.setProperty('--orgl',hexA(c,0.12));
-}
-function setFont(f){ document.body.style.fontFamily=f; }
 /* Hex rengi yüzde oranında koyulaştır/açraltır (ör. -22 = %22 koyu) */
 function shade(hex,p){
   const n=parseInt(hex.slice(1),16); const t=p<0?0:255; const a=Math.abs(p)/100;
@@ -1889,18 +1883,54 @@ function shade(hex,p){
   const f=x=>Math.round((t-x)*a)+x;
   return '#'+((1<<24)+(f(R)<<16)+(f(G)<<8)+f(B)).toString(16).slice(1);
 }
-/* Vurgu rengini uygula (ikinci/koyu tonu otomatik hesapla) + seçiciyi senkronla */
-function applyAccent(c){
-  setTheme(c, shade(c,-25));
-  const p=document.getElementById('dm_color'); if(p) p.value=c;
+/* ===== GECE/GÜNDÜZ + YAZI PARLAKLIĞI + KALICI TEMA ===== */
+const THEMES={
+  dark:{ '--bg':'#1a1d27','--bg3':'#252a38','--bg4':'#2d3245','--bg5':'#333a52','--panel':'#212532','--brd':'rgba(255,255,255,0.07)','--brd2':'rgba(255,255,255,0.12)' },
+  light:{ '--bg':'#eef1f7','--bg3':'#ffffff','--bg4':'#e7ebf3','--bg5':'#dde3ee','--panel':'#ffffff','--brd':'rgba(0,0,0,0.08)','--brd2':'rgba(0,0,0,0.14)' }
+};
+/* Yazı renkleri: parlaklık 40%→100% arası min(gri)→max ton interpolasyonu */
+const TXT_RANGE={
+  dark:{ '--txt':['#7e859c','#eef0f8'], '--txt2':['#626882','#9ba3bf'], '--txt3':['#454b63','#5a6380'] },
+  light:{ '--txt':['#6a7088','#1a1d27'], '--txt2':['#9098b0','#4a5169'], '--txt3':['#b4bace','#8a93ab'] }
+};
+function lerpHex(a,b,t){
+  const pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)];
+  const pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];
+  return '#'+pa.map((c,i)=>Math.round(c+(pb[i]-c)*t).toString(16).padStart(2,'0')).join('');
 }
-function openDesignModal(){
-  /* Mevcut vurgu rengini seçiciye yansıt (hex ise) */
-  const cur=getComputedStyle(document.documentElement).getPropertyValue('--org').trim();
-  const p=document.getElementById('dm_color');
-  if(p && /^#([0-9a-f]{6})$/i.test(cur)) p.value=cur;
-  document.getElementById('designModal').classList.add('open');
+let _theme={mode:'dark',bright:100,accent:'#ff5500',font:"'Segoe UI',Arial,sans-serif"};
+function setTheme(c,c2){ /* düşük seviye vurgu rengi setter */
+  document.documentElement.style.setProperty('--org',c);
+  document.documentElement.style.setProperty('--org2',c2);
+  document.documentElement.style.setProperty('--orgl',hexA(c,0.12));
 }
+function setFont(f){ _theme.font=f; document.body.style.fontFamily=f; persistTheme(); }
+function applyAccent(c){ _theme.accent=c; setTheme(c,shade(c,-25)); const p=document.getElementById('dm_color'); if(p)p.value=c; persistTheme(); }
+function applyTheme(){
+  const R=document.documentElement.style; const th=THEMES[_theme.mode]||THEMES.dark;
+  Object.keys(th).forEach(k=>R.setProperty(k,th[k]));
+  const t=Math.max(0,Math.min(1,(_theme.bright-40)/60)); const tr=TXT_RANGE[_theme.mode]||TXT_RANGE.dark;
+  Object.keys(tr).forEach(k=>R.setProperty(k,lerpHex(tr[k][0],tr[k][1],t)));
+  setTheme(_theme.accent, shade(_theme.accent,-25));
+  document.body.style.fontFamily=_theme.font;
+}
+function persistTheme(){ try{ localStorage.setItem('heuft_theme',JSON.stringify(_theme)); }catch(e){} }
+function restoreTheme(){
+  try{ const s=localStorage.getItem('heuft_theme'); if(s) Object.assign(_theme,JSON.parse(s)); }catch(e){}
+  applyTheme(); syncDesignUI();
+}
+function setMode(m){ _theme.mode=m; applyTheme(); persistTheme(); syncDesignUI(); }
+function setTextBright(v){ _theme.bright=parseInt(v,10); const e=document.getElementById('dm_brightVal'); if(e)e.textContent=_theme.bright+'%'; applyTheme(); persistTheme(); }
+function syncDesignUI(){
+  const c=document.getElementById('dm_color'); if(c&&/^#[0-9a-f]{6}$/i.test(_theme.accent))c.value=_theme.accent;
+  const f=document.getElementById('dm_font'); if(f)f.value=_theme.font;
+  const b=document.getElementById('dm_bright'); if(b)b.value=_theme.bright;
+  const bv=document.getElementById('dm_brightVal'); if(bv)bv.textContent=_theme.bright+'%';
+  const dd=document.getElementById('dm_dark'),dl=document.getElementById('dm_light');
+  if(dd)dd.classList.toggle('thm-on',_theme.mode==='dark');
+  if(dl)dl.classList.toggle('thm-on',_theme.mode==='light');
+}
+function openDesignModal(){ syncDesignUI(); document.getElementById('designModal').classList.add('open'); }
 function closeDesignModal(){ document.getElementById('designModal').classList.remove('open'); }
 
 /* ===== ARTİKEL: arama + regal filtresi ===== */
@@ -2322,16 +2352,47 @@ function openEspScreen(ri,ki,bi){
   document.getElementById('espScreenModal').classList.add('open');
 }
 
+function invData(){
+  return window.ARTS.slice(0,8).map((a,i)=>{ const diff=(i*7%5)-2; return {a,sys:a.qty,cnt:a.qty+diff,diff}; });
+}
 function renderInv(){
-  document.getElementById('invBody').innerHTML=window.ARTS.slice(0,8).map((a,i)=>{
-    const diff=(i*7%5)-2; const cnt=a.qty+diff;
-    return `<tr>
+  document.getElementById('invBody').innerHTML=invData().map(({a,sys,cnt,diff})=>`<tr>
       <td style="color:var(--org);font-weight:700;">${a.no}</td><td>${artName(a)}</td>
-      <td style="font-weight:600;">${a.qty}</td><td style="color:${Math.abs(diff)>1?'var(--red)':'var(--txt2)'};">${cnt}</td>
+      <td style="font-weight:600;">${sys}</td><td style="color:${Math.abs(diff)>1?'var(--red)':'var(--txt2)'};">${cnt}</td>
       <td style="font-weight:600;color:${diff!==0?'var(--yel)':'var(--grn)'};">${diff>0?'+':''}${diff}</td>
       <td>${diff===0?'<span class="tag tok">✓</span>':'<span class="tag tw">≠</span>'}</td>
-    </tr>`;
-  }).join('');
+    </tr>`).join('');
+}
+function invCSV(){
+  const rows=[['Artikel','Ürün/Produkt','Konum/Standort','Sistem/System','Sayım/Zählung','Fark/Differenz','Durum/Status']];
+  invData().forEach(({a,sys,cnt,diff})=>rows.push([a.no,artName(a),liveProdLoc(a),sys,cnt,(diff>0?'+':'')+diff,diff===0?'OK':'≠']));
+  const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download='heuft_inventur_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  showToast(t('toast_csv'));
+}
+function invPDF(){
+  const data=invData();
+  const rows=data.map(({a,sys,cnt,diff})=>`<tr><td>${a.no}</td><td>${artName(a)}</td><td>${liveProdLoc(a)}</td><td style="text-align:center;">${sys}</td><td style="text-align:center;">${cnt}</td><td style="text-align:center;color:${diff!==0?'#c80':'#0a0'};">${diff>0?'+':''}${diff}</td><td style="text-align:center;">${diff===0?'✓':'≠'}</td></tr>`).join('');
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>${t('inv_title')}</title><style>
+    body{font-family:Arial,sans-serif;padding:30px;color:#222;}
+    h1{color:#ff5500;font-size:20px;border-bottom:2px solid #ff5500;padding-bottom:8px;}
+    .sub{color:#777;font-size:12px;margin-bottom:18px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{background:#ff5500;color:#fff;text-align:left;padding:7px 9px;}
+    td{padding:6px 9px;border-bottom:1px solid #eee;}
+    tr:nth-child(even){background:#faf6f2;}
+  </style></head><body>
+    <h1>HEUFT — ${t('inv_title')}</h1>
+    <div class="sub">${t('rep_date')}: ${new Date().toLocaleString(curLang==='de'?'de-DE':'tr-TR')} · ${data.length} ${t('unit_pcs')}</div>
+    <table><thead><tr><th>Artikel</th><th>${t('th_prod')}</th><th>${t('am_loc')}</th><th>${t('th_sys')}</th><th>${t('th_count')}</th><th>${t('th_diff')}</th><th>${t('th_status')}</th></tr></thead><tbody>${rows}</tbody></table>
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  w.document.close();
+  showToast(t('toast_pdf'));
 }
 
 let statChart=null;
@@ -2512,7 +2573,8 @@ window.addEventListener('beforeunload', persistState);
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
-  const BUILD='b24'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
+  const BUILD='b25'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
