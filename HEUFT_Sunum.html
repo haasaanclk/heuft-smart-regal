@@ -1140,11 +1140,39 @@ function renderRegalYapisi(){
 function regIdxFromLoc(loc){
   if(!loc) return -1;
   const tok=String(loc).split('-')[0];
-  const i=RD.findIndex(r=>r.n===tok);
+  let i=RD.findIndex(r=>r.n===tok);
+  if(i>=0) return i;
+  i=RD.findIndex(r=>r.aliases&&r.aliases.indexOf(tok)>=0);   // ESKİ adlardan bul (kopuk kayıtları kurtarır)
   if(i>=0) return i;
   const m=tok.match(/^R(\d+)$/);
   if(m){ const idx=parseInt(m[1],10)-1; if(RD[idx]) return idx; }
   return -1;
+}
+/* "X-K3-B2" → {ki,bi} (0-index kat/box) */
+function parseKB(loc){
+  const m=String(loc||'').match(/-K(\d+)-B(\d+)/i);
+  return m ? {ki:parseInt(m[1],10)-1, bi:parseInt(m[2],10)-1} : null;
+}
+/* Ürünü zaten içeren kutuyu bul (yoksa null) */
+function boxOfArt(no){
+  for(let ri=0;ri<RD.length;ri++)
+    for(let ki=0;ki<RD[ri].kats.length;ki++)
+      for(let bi=0;bi<RD[ri].kats[ki].length;bi++)
+        if(RD[ri].kats[ki][bi].art===no) return {ri,ki,bi};
+  return null;
+}
+/* TÜM ürünleri Regal yapısına yerleştir: loc'u olan ama kutuda olmayan ürünü,
+   loc'undaki regal+kat+box'a bağlar. Böylece konum TEK KAYNAK = Regal yapısı olur. */
+function placeProductsInBoxes(){
+  window.ARTS.forEach(a=>{
+    if(boxOfArt(a.no)) return;                 // zaten bir kutuda
+    const ri=regIdxFromLoc(a.loc); const kb=parseKB(a.loc);
+    if(ri<0||!kb||!RD[ri].kats[kb.ki]||!RD[ri].kats[kb.ki][kb.bi]) return;
+    const b=RD[ri].kats[kb.ki][kb.bi];
+    if(b.art && b.art!==a.no) return;          // kutu başka ürünle dolu
+    b.art=a.no; b.qty=a.qty; b.s=(a.qty<=2?'l':a.qty<15?'m':'f');
+    a._reg=ri;
+  });
 }
 /* Konum metnindeki regal adını güncel RD'deki adla değiştir (K/B kısmı korunur) */
 function syncLoc(loc){
@@ -1195,8 +1223,9 @@ function liveRfId(r){
 /* Tüm konum metinlerini cache'li regal indeksinden güncelle (açılışta + her ad değişiminde).
    Önce ürünler (indeks cache lenir), sonra RFID'ler (gerekirse bağlı üründen kurtarılır). */
 function reconcileLocations(){
-  window.ARTS.forEach(a=>{ liveProdLoc(a); }); // _reg'i cache le (box bağlısı dahil)
-  window.ARTS.forEach(a=>{ const idx=(a._reg!=null&&RD[a._reg])?a._reg:recRegIdx(a,a.loc); if(idx>=0) a.loc=RD[idx].n+locSuffix(a.loc); });
+  placeProductsInBoxes();                       // ürünleri Regal yapısına yerleştir (tek kaynak)
+  window.ARTS.forEach(a=>{ liveProdLoc(a); });   // _reg'i cache le (box bağlısı dahil)
+  window.ARTS.forEach(a=>{ const bx=boxOfArt(a.no); const idx=bx?bx.ri:((a._reg!=null&&RD[a._reg])?a._reg:recRegIdx(a,a.loc)); if(idx>=0) a.loc=(bx?`${RD[bx.ri].n}-K${bx.ki+1}-B${bx.bi+1}`:RD[idx].n+locSuffix(a.loc)); });
   window.RFIDS.forEach(r=>{
     const idx=rfRegIdx(r);
     if(idx>=0){
@@ -1210,8 +1239,9 @@ function renameRegal(ri){
   const nv=prompt(t('rename_regal'),old);
   if(nv===null) return;
   const name=nv.trim(); if(!name||name===old) return;
+  (RD[ri].aliases=RD[ri].aliases||[]); if(RD[ri].aliases.indexOf(old)<0) RD[ri].aliases.push(old);  // eski adı hatırla
   RD[ri].n=name;
-  reconcileLocations();   /* cache'li indekslerden TÜM konum/RFID adlarını yeni ada güncelle */
+  reconcileLocations();   /* TÜM konum/RFID adlarını Regal yapısından güncelle */
   commit();
   showToast(t('toast_regalren'));
 }
@@ -1533,7 +1563,7 @@ function renderActiveCalls(){
   if(!window.CALLS.length){ el.innerHTML=`<div style="font-size:10px;color:var(--txt3);padding:4px;">${t('pick_none')}</div>`; return; }
   el.innerHTML=window.CALLS.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 7px;background:rgba(15,219,126,.08);border:1px solid rgba(15,219,126,.3);border-radius:6px;margin-bottom:4px;">
     <span style="width:8px;height:8px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:blink 1s infinite;"></span>
-    <div style="flex:1;"><div style="font-size:10px;font-weight:600;">${c.no}</div><div style="font-size:8px;color:var(--txt3);">${c.loc}</div></div>
+    <div style="flex:1;"><div style="font-size:10px;font-weight:600;">${c.no}</div><div style="font-size:8px;color:var(--txt3);">${findArt(c.no)?liveProdLoc(findArt(c.no)):(c.loc||'—')}</div></div>
     <button class="bo" style="padding:3px 8px;font-size:9px;" onclick="ackCall(${i})"><i class="ti ti-hand-finger"></i> ${t('pick_ack')}</button>
   </div>`).join('');
 }
@@ -1751,7 +1781,7 @@ function renderLowStock(){
 }
 function reportLowCSV(){
   const rows=[['Artikel','Ürün/Produkt','Konum/Standort','Stok/Bestand','Durum/Status','DIN-ISO']];
-  lowStockData().forEach(a=>rows.push([a.no,artName(a),a.loc,a.qty,t(a.st==='crit'?'kritik':'dusuk'),a.din||'']));
+  lowStockData().forEach(a=>rows.push([a.no,artName(a),liveProdLoc(a),a.qty,t(a.st==='crit'?'kritik':'dusuk'),a.din||'']));
   const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob); const a=document.createElement('a');
@@ -1761,7 +1791,7 @@ function reportLowCSV(){
 }
 function reportLowPDF(){
   const data=lowStockData();
-  const rows=data.map(a=>`<tr><td>${a.no}</td><td>${artName(a)}</td><td>${a.loc}</td><td style="text-align:center;">${a.qty}</td><td>${t(a.st==='crit'?'kritik':'dusuk')}</td><td>${a.din||'—'}</td></tr>`).join('');
+  const rows=data.map(a=>`<tr><td>${a.no}</td><td>${artName(a)}</td><td>${liveProdLoc(a)}</td><td style="text-align:center;">${a.qty}</td><td>${t(a.st==='crit'?'kritik':'dusuk')}</td><td>${a.din||'—'}</td></tr>`).join('');
   const w=window.open('','_blank');
   w.document.write(`<html><head><title>${t('rep_title')}</title><style>
     body{font-family:Arial,sans-serif;padding:30px;color:#222;}
@@ -1867,7 +1897,7 @@ function closeDesignModal(){ document.getElementById('designModal').classList.re
 function renderArtFiltered(){
   const q=(document.getElementById('artSrch')?document.getElementById('artSrch').value:'').toLowerCase();
   const reg=document.getElementById('artRegalFilter')?document.getElementById('artRegalFilter').value:'';
-  renderArt(window.ARTS.filter(a=>(!q||a.no.toLowerCase().includes(q)||a.n.toLowerCase().includes(q))&&(!reg||(a.loc||'').startsWith(reg+'-'))));
+  renderArt(window.ARTS.filter(a=>(!q||a.no.toLowerCase().includes(q)||a.n.toLowerCase().includes(q))&&(!reg||liveProdLoc(a).startsWith(reg+'-'))));
 }
 
 /* ===== İSTATİSTİK: ürün seçici ===== */
@@ -2471,7 +2501,7 @@ window.addEventListener('beforeunload', persistState);
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
-  const BUILD='b20'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b21'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
