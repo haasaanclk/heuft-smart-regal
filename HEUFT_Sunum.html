@@ -507,13 +507,13 @@ body.role-operator .admin-only{display:none!important;}
       <button class="pbtn" onclick="setPeriod(this,'12m')" data-i18n="p_12m">12 Ay</button>
     </div>
   </div>
-  <div class="cb"><div id="statStockInd" style="margin-bottom:8px;"></div><div style="position:relative;height:200px;"><canvas id="statChart"></canvas></div></div></div>
+  <div class="cb"><div id="statStockInd" style="margin-bottom:8px;"></div><div id="statChartBox" style="min-height:200px;"></div></div></div>
   <div class="card"><div class="ch"><i class="ti ti-chart-pie" style="color:var(--org);"></i><span class="ct" data-i18n="st_proc">Süreç & Oran İstatistikleri</span></div>
   <div class="cb"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;" id="statProcGrid">
-    <div><div class="pt2" data-i18n="st_statusdist">Stok Durum Dağılımı</div><div style="position:relative;height:180px;"><canvas id="statStatusChart"></canvas></div></div>
-    <div><div class="pt2" data-i18n="st_kanbandist">Kanban Dağılımı (Süreç)</div><div style="position:relative;height:180px;"><canvas id="statKanbanChart"></canvas></div></div>
-    <div><div class="pt2" data-i18n="st_topstock">En Çok Stoklu Ürünler</div><div style="position:relative;height:180px;"><canvas id="statTopChart"></canvas></div></div>
-    <div><div class="pt2" data-i18n="st_regaldist">Regal Bazında Stok</div><div style="position:relative;height:180px;"><canvas id="statRegalChart"></canvas></div></div>
+    <div><div class="pt2" data-i18n="st_statusdist">Stok Durum Dağılımı</div><div id="statStatusChart" style="min-height:140px;"></div></div>
+    <div><div class="pt2" data-i18n="st_kanbandist">Kanban Dağılımı (Süreç)</div><div id="statKanbanChart" style="min-height:140px;"></div></div>
+    <div><div class="pt2" data-i18n="st_topstock">En Çok Stoklu Ürünler</div><div id="statTopChart" style="min-height:140px;"></div></div>
+    <div><div class="pt2" data-i18n="st_regaldist">Regal Bazında Stok</div><div id="statRegalChart" style="min-height:140px;"></div></div>
   </div></div></div>
 </div>
 
@@ -777,7 +777,6 @@ body.role-operator .admin-only{display:none!important;}
 
 <div class="toast" id="toast"><i class="ti ti-circle-check"></i><span id="toastMsg">OK</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 const I18N = {
 tr:{
@@ -2529,72 +2528,72 @@ const PERIODS={
 let curPeriod='daily';
 function renderChart(period){
   curPeriod=period;
-  try{
-    const p=PERIODS[period]||PERIODS.daily;
-    const labels=curLang==='de'?p.dlabels:p.labels;
-    let ins=p.ins.slice(), outs=p.outs.slice();
-    if(typeof renderStockInd==='function') renderStockInd();
-    const prod=document.getElementById('statProduct')?document.getElementById('statProduct').value:'';
-    if(prod){ const a=findArt(prod); const seed=(parseInt(prod.replace(/\D/g,''))%7)+2; const base=a?Math.max(1,a.avgDaily||3):3;
-      ins=p.ins.map((v,i)=>Math.round(base*(((i*seed)%9)+3))); outs=p.outs.map((v,i)=>Math.round(base*(((i*seed)%7)+2))); }
-    const totIn=ins.reduce((a,b)=>a+b,0), totOut=outs.reduce((a,b)=>a+b,0);
-    document.getElementById('st-in').textContent=totIn.toLocaleString('de-DE');
-    document.getElementById('st-out').textContent=totOut.toLocaleString('de-DE');
-    document.getElementById('st-total').textContent=(totIn+totOut).toLocaleString('de-DE');
-    document.getElementById('st-net').textContent=(totIn-totOut>=0?'+':'')+(totIn-totOut).toLocaleString('de-DE');
-    const ctx=document.getElementById('statChart');
-    if(statChart) statChart.destroy();
-    statChart=new Chart(ctx,{type:'bar',data:{labels,datasets:[
-      {label:t('st_in'),data:ins,backgroundColor:'rgba(255,85,0,.75)',borderRadius:3},
-      {label:t('st_out'),data:outs,backgroundColor:'rgba(77,157,255,.55)',borderRadius:3},
-      {label:t('st_net'),data:ins.map((v,i)=>v-outs[i]),type:'line',borderColor:'#0fdb7e',borderWidth:2,pointRadius:2,tension:.4}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#9ba3bf',font:{size:10},boxWidth:12}}},scales:{x:{ticks:{color:'#5a6380',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#5a6380',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}}}});
-  }catch(e){ console.warn('Chart.js:',e); }
+  const p=PERIODS[period]||PERIODS.daily;
+  const labels=curLang==='de'?p.dlabels:p.labels;
+  let ins=p.ins.slice(), outs=p.outs.slice();
+  if(typeof renderStockInd==='function') renderStockInd();
+  const prod=document.getElementById('statProduct')?document.getElementById('statProduct').value:'';
+  if(prod){ const a=findArt(prod); const seed=(parseInt(prod.replace(/\D/g,''))%7)+2; const base=a?Math.max(1,a.avgDaily||3):3;
+    ins=p.ins.map((v,i)=>Math.round(base*(((i*seed)%9)+3))); outs=p.outs.map((v,i)=>Math.round(base*(((i*seed)%7)+2))); }
+  const totIn=ins.reduce((a,b)=>a+b,0), totOut=outs.reduce((a,b)=>a+b,0);
+  const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setT('st-in',totIn.toLocaleString('de-DE')); setT('st-out',totOut.toLocaleString('de-DE'));
+  setT('st-total',(totIn+totOut).toLocaleString('de-DE')); setT('st-net',(totIn-totOut>=0?'+':'')+(totIn-totOut).toLocaleString('de-DE'));
+  const box=document.getElementById('statChartBox'); if(!box) return;
+  const max=Math.max(...ins,...outs,1);
+  const bars=labels.map((lb,i)=>`
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;">
+      <div style="display:flex;align-items:flex-end;gap:2px;height:150px;">
+        <div title="${t('st_in')}: ${ins[i]}" style="width:9px;background:var(--org);border-radius:2px 2px 0 0;height:${Math.round(ins[i]/max*150)}px;transition:height .3s;"></div>
+        <div title="${t('st_out')}: ${outs[i]}" style="width:9px;background:var(--blu);border-radius:2px 2px 0 0;height:${Math.round(outs[i]/max*150)}px;transition:height .3s;"></div>
+      </div>
+      <span style="font-size:8px;color:var(--txt3);">${lb}</span>
+    </div>`).join('');
+  box.innerHTML=`<div style="display:flex;gap:12px;font-size:9px;color:var(--txt2);margin-bottom:8px;">
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;background:var(--org);border-radius:2px;"></span>${t('st_in')}</span>
+      <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;background:var(--blu);border-radius:2px;"></span>${t('st_out')}</span>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:3px;overflow-x:auto;">${bars}</div>`;
 }
 function setPeriod(btn,period){
   document.querySelectorAll('#periodBtns .pbtn').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   renderChart(period);
 }
-/* ===== SÜREÇ & ORAN GRAFİKLERİ (modern: donut / pasta / yatay bar) ===== */
-let _statCharts={};
+/* ===== SÜREÇ & ORAN GRAFİKLERİ — SAF CSS (kütüphane gerektirmez, her zaman görünür) ===== */
 function prodRegalIndex(a){ const bx=boxOfArt(a.no); if(bx) return bx.ri; if(a._reg!=null&&RD[a._reg]) return a._reg; return regIdxFromLoc(a.loc); }
-function _gridColor(){ return 'rgba(128,128,128,.12)'; }
-function _tickColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--txt3').trim()||'#5a6380'; }
-function _legendColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--txt2').trim()||'#9ba3bf'; }
-function _destroyStat(k){ if(_statCharts[k]){ _statCharts[k].destroy(); delete _statCharts[k]; } }
-function _panelColor(){ return (getComputedStyle(document.documentElement).getPropertyValue('--panel').trim())||'#212532'; }
-function drawCircle(id,key,data,labels,colors,type){
-  const ctx=document.getElementById(id); if(!ctx||typeof Chart==='undefined') return;
-  _destroyStat(key);
-  _statCharts[key]=new Chart(ctx,{type:type||'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderColor:_panelColor(),borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:type==='pie'?0:'56%',
-      plugins:{legend:{position:'bottom',labels:{color:_legendColor(),font:{size:9},boxWidth:10,padding:6}}}}});
-}
-function drawHBar(id,key,labels,data,colors){
-  const ctx=document.getElementById(id); if(!ctx||typeof Chart==='undefined') return;
-  _destroyStat(key);
-  _statCharts[key]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:4}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:_tickColor(),font:{size:8}},grid:{color:_gridColor()}},y:{ticks:{color:_tickColor(),font:{size:9}},grid:{display:false}}}}});
-}
 const STAT_PALETTE=['#ff5500','#4d9dff','#0fdb7e','#ffb800','#7f77dd','#22d3ee','#e24b4a','#a0d911'];
+/* CSS donut/pasta: conic-gradient + lejant */
+function cssCircle(id,data,labels,colors,donut){
+  const el=document.getElementById(id); if(!el) return;
+  const total=data.reduce((a,b)=>a+b,0)||1; let acc=0;
+  const segs=data.map((v,i)=>{ const s=acc/total*360; acc+=v; const e=acc/total*360; return `${colors[i]} ${s}deg ${e}deg`; }).join(',');
+  const legend=labels.map((l,i)=>`<div style="display:flex;align-items:center;gap:5px;margin:2px 0;"><span style="width:9px;height:9px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span><span style="color:var(--txt2);">${l}</span> <b style="color:var(--txt);">${data[i]}</b> <span style="color:var(--txt3);">(${Math.round(data[i]/total*100)}%)</span></div>`).join('');
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="width:104px;height:104px;border-radius:50%;background:conic-gradient(${segs});position:relative;flex-shrink:0;">
+      ${donut?'<div style="position:absolute;inset:28%;background:var(--panel);border-radius:50%;"></div>':''}</div>
+    <div style="font-size:10px;flex:1;min-width:120px;">${legend}</div></div>`;
+}
+/* CSS yatay bar */
+function cssHBar(id,labels,data,colors){
+  const el=document.getElementById(id); if(!el) return;
+  const max=Math.max(...data,1);
+  el.innerHTML=data.map((v,i)=>`<div style="display:flex;align-items:center;gap:6px;margin:4px 0;font-size:9px;">
+    <span style="width:70px;color:var(--txt3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">${labels[i]}</span>
+    <div style="flex:1;background:var(--bg5);border-radius:3px;height:15px;overflow:hidden;"><div style="width:${Math.round(v/max*100)}%;height:100%;background:${colors[i]};border-radius:3px;transition:width .3s;"></div></div>
+    <b style="width:30px;text-align:right;color:var(--txt);">${v}</b></div>`).join('') || `<div style="color:var(--txt3);font-size:10px;padding:8px;">—</div>`;
+}
 function renderStatCharts(){
-  if(typeof Chart==='undefined') return;
   try{
   const arts=window.ARTS;
-  /* 1) Stok durum dağılımı (oran) */
   const ok=arts.filter(a=>a.st==='ok').length, low=arts.filter(a=>a.st==='low').length, crit=arts.filter(a=>a.st==='crit').length;
-  drawCircle('statStatusChart','status',[ok,low,crit],[t('stokta'),t('dusuk'),t('kritik')],['#0fdb7e','#ffb800','#ff4560']);
-  /* 2) Kanban süreç dağılımı (pasta) */
+  cssCircle('statStatusChart',[ok,low,crit],[t('stokta'),t('dusuk'),t('kritik')],['#0fdb7e','#ffb800','#ff4560'],true);
   const g=arts.filter(a=>kanbanStatus(a)==='gruen').length, ge=arts.filter(a=>kanbanStatus(a)==='gelb').length, rt=arts.filter(a=>kanbanStatus(a)==='rot').length;
-  drawCircle('statKanbanChart','kanban',[g,ge,rt],[t('kb_ok'),t('kb_order'),t('kb_crit')],['#0fdb7e','#ffb800','#ff4560'],'pie');
-  /* 3) En çok stoklu ürünler (yatay bar) */
+  cssCircle('statKanbanChart',[g,ge,rt],[t('kb_ok'),t('kb_order'),t('kb_crit')],['#0fdb7e','#ffb800','#ff4560'],false);
   const top=[...arts].sort((a,b)=>(b.qty||0)-(a.qty||0)).slice(0,6);
-  drawHBar('statTopChart','top',top.map(a=>a.no),top.map(a=>a.qty||0),top.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
-  /* 4) Regal bazında toplam stok (yatay bar) */
+  cssHBar('statTopChart',top.map(a=>a.no),top.map(a=>a.qty||0),top.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
   const reg=RD.map((rr,ri)=>({n:rr.n, q:arts.filter(a=>prodRegalIndex(a)===ri).reduce((s,a)=>s+(a.qty||0),0)}));
-  drawHBar('statRegalChart','regal',reg.map(x=>x.n),reg.map(x=>x.q),reg.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
+  cssHBar('statRegalChart',reg.map(x=>x.n),reg.map(x=>x.q),reg.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
   }catch(e){ console.warn('renderStatCharts:',e); }
 }
 function applyDateRange(){
@@ -2740,7 +2739,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
   restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
   restoreSession(); // oturum açıksa login'e yönlendirme
-  const BUILD='b30'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b31'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
@@ -2753,6 +2752,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   renderEsp();
   renderInv();
   renderChart('daily');
+  if(typeof renderStatCharts==='function') renderStatCharts();
   updateKPIs();
   renderKanban();
   renderAudit();
