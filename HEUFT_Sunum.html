@@ -534,7 +534,9 @@ body.role-operator .admin-only{display:none!important;}
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <button class="bo" onclick="exportBackup()"><i class="ti ti-download"></i> <span data-i18n="backup_export">Yedek İndir (JSON)</span></button>
     <button class="bd" onclick="document.getElementById('backupFile').click()"><i class="ti ti-upload"></i> <span data-i18n="backup_import">Yedekten Geri Yükle</span></button>
-  </div></div></div>
+    <button class="bd" onclick="repairLocations()"><i class="ti ti-tool"></i> <span data-i18n="repair_btn">Konumları Onar</span></button>
+  </div>
+  <div style="font-size:9px;color:var(--txt3);margin-top:7px;" data-i18n="repair_hint">Konumları Onar: veriyi SİLMEDEN tüm konumları Regal yapısına göre yeniden bağlar.</div></div></div>
   <div class="card"><div class="ch"><i class="ti ti-history" style="color:var(--org);"></i><span class="ct" data-i18n="audit_title">İşlem Geçmişi (Audit-Log)</span></div>
   <div class="cb" id="auditBody" style="max-height:200px;overflow-y:auto;"></div></div>
   <div class="card"><div class="ch"><i class="ti ti-cpu" style="color:var(--org);"></i><span class="ct" data-i18n="set_hw">Donanım Bilgisi</span></div>
@@ -808,6 +810,7 @@ tr:{
   toast_purged:"Kalıcı olarak silindi!", toast_trashempty:"Geri dönüşüm kutusu boşaltıldı!", toast_backup:"Yedek indirildi!", no_selection:"Hiçbir artikel seçilmedi!", err_import:"Geçersiz yedek dosyası!",
   trash_title:"Geri Dönüşüm Kutusu", trash_empty:"Geri dönüşüm kutusu boş", restore:"Geri Yükle", btn_emptytrash:"Kutuyu Boşalt",
   backup_title:"Yedekleme & Geri Yükleme", backup_export:"Yedek İndir (JSON)", backup_import:"Yedekten Geri Yükle", backup_desc:"Tüm artikel, RFID, regal ve geçmiş verileri tek dosyada yedekleyin.",
+  repair_btn:"Konumları Onar", repair_hint:"Konumları Onar: veriyi SİLMEDEN tüm konumları Regal yapısına göre yeniden bağlar.", repair_done:"Konumlar Regal yapısına göre onarıldı",
   audit_title:"İşlem Geçmişi (Audit-Log)", audit_empty:"Henüz işlem kaydı yok",
   audit_delete_art:"Artikel silindi", audit_restore_art:"Artikel geri yüklendi", audit_purge_art:"Artikel kalıcı silindi",
   audit_empty_trash:"Kutu boşaltıldı", audit_backup_export:"Yedek alındı", audit_backup_import:"Yedekten yüklendi", audit_add_art:"Artikel eklendi", audit_edit_art:"Artikel düzenlendi",
@@ -893,6 +896,7 @@ de:{
   toast_purged:"Endgültig gelöscht!", toast_trashempty:"Papierkorb geleert!", toast_backup:"Sicherung heruntergeladen!", no_selection:"Kein Artikel ausgewählt!", err_import:"Ungültige Sicherungsdatei!",
   trash_title:"Papierkorb", trash_empty:"Papierkorb ist leer", restore:"Wiederherstellen", btn_emptytrash:"Papierkorb leeren",
   backup_title:"Sicherung & Wiederherstellung", backup_export:"Sicherung herunterladen (JSON)", backup_import:"Aus Sicherung wiederherstellen", backup_desc:"Alle Artikel-, RFID-, Regal- und Verlaufsdaten in einer Datei sichern.",
+  repair_btn:"Positionen reparieren", repair_hint:"Positionen reparieren: verknüpft alle Standorte neu gemäß Regalstruktur, OHNE Daten zu löschen.", repair_done:"Standorte gemäß Regalstruktur repariert",
   audit_title:"Änderungsverlauf (Audit-Log)", audit_empty:"Noch keine Einträge",
   audit_delete_art:"Artikel gelöscht", audit_restore_art:"Artikel wiederhergestellt", audit_purge_art:"Artikel endgültig gelöscht",
   audit_empty_trash:"Papierkorb geleert", audit_backup_export:"Sicherung erstellt", audit_backup_import:"Aus Sicherung geladen", audit_add_art:"Artikel hinzugefügt", audit_edit_art:"Artikel bearbeitet",
@@ -1198,7 +1202,9 @@ function liveProdLoc(a){
       for(let bi=0;bi<RD[ri].kats[ki].length;bi++)
         if(RD[ri].kats[ki][bi].art===a.no){ a._reg=ri; return `${RD[ri].n}-K${ki+1}-B${bi+1}`; }
   const idx=recRegIdx(a,a.loc);
-  return idx>=0 ? RD[idx].n+locSuffix(a.loc) : (a.loc||'—');
+  /* Çözülemeyen (kopuk) kayıtta ESKİ/yanlış adı GÖSTERME → "—".
+     Garanti: gösterilen regal adı her zaman güncel Regal yapısından gelir. */
+  return idx>=0 ? RD[idx].n+locSuffix(a.loc) : '—';
 }
 /* RFID'nin SABİT regal indeksini bul: kendi loc'undan, olmazsa BAĞLI ÜRÜNDEN kurtar.
    Böylece adı kopmuş RFID'ler de bağlı oldukları ürünün regaline bağlanır. */
@@ -1213,7 +1219,7 @@ function rfRegIdx(r){
 /* RFID konumunu / tag id'sini CANLI ver */
 function liveRfLoc(r){
   const idx=rfRegIdx(r);
-  return idx>=0 ? RD[idx].n+locSuffix(r&&r.loc) : ((r&&r.loc)||'—');
+  return idx>=0 ? RD[idx].n+locSuffix(r&&r.loc) : '—';   /* kopuksa eski adı gösterme */
 }
 function liveRfId(r){
   if(!r||!r.id||r.id.indexOf('RFID-')!==0) return (r&&r.id)||'';
@@ -1244,6 +1250,12 @@ function renameRegal(ri){
   reconcileLocations();   /* TÜM konum/RFID adlarını Regal yapısından güncelle */
   commit();
   showToast(t('toast_regalren'));
+}
+/* Veri SİLMEDEN onarım: tüm konumları Regal yapısına göre yeniden bağlar (placement + reconcile) */
+function repairLocations(){
+  reconcileLocations();
+  commit();
+  showToast(t('repair_done'));
 }
 function addRegal(){
   if(RD.length>=8){ showToast(t('max_regal')); return; }
@@ -2015,7 +2027,7 @@ function openArtModal(idx, boxCtx){
   if(editing){
     const a=window.ARTS[idx]; normalizeKanban(a);
     const v=(id,val)=>document.getElementById(id).value=(val===undefined||val===null)?'':val;
-    v('am_no',a.no); v('am_name',a.n); v('am_maker',a.maker); v('am_loc',liveProdLoc(a));
+    v('am_no',a.no); v('am_name',a.n); v('am_maker',a.maker); v('am_loc',liveProdLoc(a)!=='—'?liveProdLoc(a):(a.loc||''));
     v('am_ver',a.ver); v('am_var',a.vrt); v('am_din',a.din);
     v('am_unitw',a.unitw); v('am_boxw',a.boxw);
     v('am_avg',a.avgDaily); v('am_lead',a.leadTime); v('am_beh',a.behaelter);
@@ -2501,7 +2513,7 @@ window.addEventListener('beforeunload', persistState);
 window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
-  const BUILD='b21'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b23'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
