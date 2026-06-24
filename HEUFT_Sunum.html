@@ -331,7 +331,9 @@ body.role-operator .admin-only{display:none!important;}
 
 <!-- REGAL YAPISI -->
 <div class="view" id="view-regal">
-  <div class="card"><div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="regal_title">Regal Yapı Yönetimi</span><button class="bo admin-only" onclick="addRegal()"><i class="ti ti-plus"></i><span data-i18n="btn_addregal">Regal Ekle</span></button></div><div class="cb" id="regalYapisi"></div></div>
+  <div class="card"><div class="ch"><i class="ti ti-server" style="color:var(--org);"></i><span class="ct" data-i18n="regal_title">Regal Yapı Yönetimi</span><button class="bo admin-only" onclick="addRegal()"><i class="ti ti-plus"></i><span data-i18n="btn_addregal">Regal Ekle</span></button></div>
+  <div style="padding:8px 13px 0;font-size:10px;color:var(--txt3);display:flex;align-items:center;gap:5px;"><i class="ti ti-hand-finger" style="color:var(--org);"></i><span data-i18n="box_hint">Kutu: 1 tık → seç/sil · 2 tık → ürün ekle/aç</span></div>
+  <div class="cb" id="regalYapisi"></div></div>
 </div>
 
 <!-- ARTİKEL -->
@@ -774,7 +776,7 @@ tr:{
   m_art:"Aktif Artikel", m_fill:"Stok Doluluk", m_low:"Düşük Stok", m_ops:"Toplam İşlem",
   rv_title:"Regal Görünümü — Anlık", low_title:"Düşük / Kritik Stok", recent_title:"Son İşlemler", waiting_mqtt:"MQTT verisi bekleniyor...",
   leg_full:"Dolu", leg_mid:"Kritik", leg_low:"Düşük", leg_empty:"Boş", leg_active:"Çağrılan",
-  regal_title:"Regal Yapı Yönetimi", btn_addregal:"Regal Ekle", alert_addregal:"Yeni regal eklendi!",
+  regal_title:"Regal Yapı Yönetimi", btn_addregal:"Regal Ekle", alert_addregal:"Yeni regal eklendi!", box_hint:"Kutu: 1 tık → seç/sil · 2 tık → ürün ekle/aç",
   art_search_ph:"HBE numarası veya ürün adı...", btn_addart:"Yeni Artikel Ekle", art_addhint:"Ürün ekleme: Regal Yapısı → boş kutu", rf_viewonly:"Görüntüleme — tag'ler ürün eklenince oluşur",
   lc_active:"Aktif Sensor", lc_prec:"Hassasiyet", lc_acc:"Doğruluk", lc_cal:"Kalibrasyon", lc_title:"LoadCell Ağırlık Monitörü",
   rf_active:"Aktif Tag", rf_weak:"Zayıf", rf_off:"Çevrimdışı", rf_succ:"Başarı", rf_title:"RFID Tag Listesi", btn_addrfid:"Tag Ekle",
@@ -862,7 +864,7 @@ de:{
   m_art:"Aktive Artikel", m_fill:"Lagerauslastung", m_low:"Niedriger Bestand", m_ops:"Transaktionen gesamt",
   rv_title:"Regalansicht — Live", low_title:"Niedriger / Kritischer Bestand", recent_title:"Letzte Transaktionen", waiting_mqtt:"Warte auf MQTT-Daten...",
   leg_full:"Voll", leg_mid:"Kritisch", leg_low:"Niedrig", leg_empty:"Leer", leg_active:"Abgerufen",
-  regal_title:"Regalstruktur-Verwaltung", btn_addregal:"Regal hinzufügen", alert_addregal:"Neues Regal hinzugefügt!",
+  regal_title:"Regalstruktur-Verwaltung", btn_addregal:"Regal hinzufügen", alert_addregal:"Neues Regal hinzugefügt!", box_hint:"Box: 1 Klick → wählen/löschen · 2 Klicks → Produkt hinzufügen/öffnen",
   art_search_ph:"HBE-Nummer oder Produktname...", btn_addart:"Neuen Artikel hinzufügen", art_addhint:"Produkt hinzufügen: Regalstruktur → leere Box", rf_viewonly:"Ansicht — Tags entstehen beim Produkt-Anlegen",
   lc_active:"Aktive Sensoren", lc_prec:"Genauigkeit", lc_acc:"Präzision", lc_cal:"Kalibrierung", lc_title:"LoadCell-Gewichtsmonitor",
   rf_active:"Aktive Tags", rf_weak:"Schwach", rf_off:"Offline", rf_succ:"Erfolgsrate", rf_title:"RFID-Tag-Liste", btn_addrfid:"Tag hinzufügen",
@@ -1126,6 +1128,12 @@ function renderRegalVis(){
    - "Aç" (kalem) → seçili kutuyu aç (ürün ekle/yönet).
    - "Sil": kutu seçiliyse o KUTU silinir; seçili kutu yoksa KAT silinir. */
 let _selBox=null;
+/* Tek tık → seç (silme için). Çift tık → kutuyu aç (ürün ekle/yönet). */
+let _boxClickTimer=null;
+function boxClick(ri,ki,bi){
+  if(_boxClickTimer){ clearTimeout(_boxClickTimer); _boxClickTimer=null; openBoxModal(ri,ki,bi); return; }
+  _boxClickTimer=setTimeout(()=>{ _boxClickTimer=null; selectBox(ri,ki,bi); }, 240);
+}
 function selectBox(ri,ki,bi){
   if(_selBox&&_selBox.ri===ri&&_selBox.ki===ki&&_selBox.bi===bi) _selBox=null;
   else _selBox={ri,ki,bi};
@@ -1163,7 +1171,7 @@ function renderRegalYapisi(){
         const inf=boxInfo(b); const has=!!inf.no;
         const sel=_selBox&&_selBox.ri===ri&&_selBox.ki===ki&&_selBox.bi===bi;
         const tip=`${r.n}-K${ki+1}-B${bi+1}`+(has?` · ${inf.no} · ${inf.name}`+(inf.ver?` · ${inf.ver}`:'')+(inf.vrt?'/'+inf.vrt:'')+` · ${inf.qty} ${t('unit_pcs')}`:` · ${t('bx_empty')}`);
-        html+=`<div onclick="selectBox(${ri},${ki},${bi})" data-tip="${tip.replace(/"/g,'')}" style="cursor:pointer;width:38px;height:32px;border-radius:5px;border:${sel?'2px solid var(--org)':('1px solid '+(has?'var(--org)':'var(--brd2)'))};box-shadow:${sel?'0 0 0 3px var(--orgl)':'none'};background:${has?'var(--orgl)':'var(--bg5)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
+        html+=`<div onclick="boxClick(${ri},${ki},${bi})" data-tip="${tip.replace(/"/g,'')}" style="cursor:pointer;width:38px;height:32px;border-radius:5px;border:${sel?'2px solid var(--org)':('1px solid '+(has?'var(--org)':'var(--brd2)'))};box-shadow:${sel?'0 0 0 3px var(--orgl)':'none'};background:${has?'var(--orgl)':'var(--bg5)'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;">
           <span style="font-size:7px;color:var(--txt3);">B${bi+1}</span>
           ${has?`<span style="font-size:8px;color:var(--org);font-weight:700;">${inf.qty||'●'}</span>`:`<i class="ti ti-plus" style="font-size:11px;color:var(--txt3);"></i>`}
         </div>`;
@@ -2668,7 +2676,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
   restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
   restoreSession(); // oturum açıksa login'e yönlendirme
-  const BUILD='b28'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b29'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
