@@ -503,6 +503,13 @@ body.role-operator .admin-only{display:none!important;}
     </div>
   </div>
   <div class="cb"><div id="statStockInd" style="margin-bottom:8px;"></div><div style="position:relative;height:200px;"><canvas id="statChart"></canvas></div></div></div>
+  <div class="card"><div class="ch"><i class="ti ti-chart-pie" style="color:var(--org);"></i><span class="ct" data-i18n="st_proc">Süreç & Oran İstatistikleri</span></div>
+  <div class="cb"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;" id="statProcGrid">
+    <div><div class="pt2" data-i18n="st_statusdist">Stok Durum Dağılımı</div><div style="position:relative;height:180px;"><canvas id="statStatusChart"></canvas></div></div>
+    <div><div class="pt2" data-i18n="st_kanbandist">Kanban Dağılımı (Süreç)</div><div style="position:relative;height:180px;"><canvas id="statKanbanChart"></canvas></div></div>
+    <div><div class="pt2" data-i18n="st_topstock">En Çok Stoklu Ürünler</div><div style="position:relative;height:180px;"><canvas id="statTopChart"></canvas></div></div>
+    <div><div class="pt2" data-i18n="st_regaldist">Regal Bazında Stok</div><div style="position:relative;height:180px;"><canvas id="statRegalChart"></canvas></div></div>
+  </div></div></div>
 </div>
 
 <!-- UYARILAR -->
@@ -775,6 +782,7 @@ tr:{
   mq_total:"Toplam Mesaj", mq_pm:"Mesaj/Dk", mq_topics:"Aktif Topic", mq_errs:"Hata", mq_live:"Canlı MQTT Akışı",
   inv_title:"İnventür Listesi", th_art:"Artikel", th_prod:"Ürün", th_sys:"Sistem", th_count:"Sayım", th_diff:"Fark", th_status:"Durum",
   st_in:"Dönem Girişi", st_out:"Dönem Çıkışı", st_total:"Toplam İşlem", st_net:"Net Değişim", st_chart:"Stok Hareketi",
+  st_proc:"Süreç & Oran İstatistikleri", st_statusdist:"Stok Durum Dağılımı", st_kanbandist:"Kanban Dağılımı (Süreç)", st_topstock:"En Çok Stoklu Ürünler", st_regaldist:"Regal Bazında Stok",
   p_daily:"Günlük", p_weekly:"Haftalık", p_3m:"3 Ay", p_6m:"6 Ay", p_9m:"9 Ay", p_12m:"12 Ay",
   uy_title:"Aktif Uyarılar", uy_crit:"Kritik Stok", uy_left:"adet kaldı", uy_weaksig:"Zayıf Sinyal",
   lang_title:"Dil Ayarları", set_mqtt:"MQTT Broker Ayarları", set_connect:"Bağlan", set_connected:"MQTT broker'a bağlanıldı!",
@@ -862,6 +870,7 @@ de:{
   mq_total:"Nachrichten gesamt", mq_pm:"Nachrichten/Min", mq_topics:"Aktive Topics", mq_errs:"Fehler", mq_live:"Live-MQTT-Stream",
   inv_title:"Inventurliste", th_art:"Artikel", th_prod:"Produkt", th_sys:"System", th_count:"Zählung", th_diff:"Differenz", th_status:"Status",
   st_in:"Zugänge (Periode)", st_out:"Abgänge (Periode)", st_total:"Transaktionen gesamt", st_net:"Nettoveränderung", st_chart:"Bestandsbewegung",
+  st_proc:"Prozess- & Verhältnisstatistik", st_statusdist:"Bestandsstatus-Verteilung", st_kanbandist:"Kanban-Verteilung (Prozess)", st_topstock:"Artikel mit höchstem Bestand", st_regaldist:"Bestand pro Regal",
   p_daily:"Täglich", p_weekly:"Wöchentlich", p_3m:"3 Monate", p_6m:"6 Monate", p_9m:"9 Monate", p_12m:"12 Monate",
   uy_title:"Aktive Warnungen", uy_crit:"Kritischer Bestand", uy_left:"Stück übrig", uy_weaksig:"Schwaches Signal",
   lang_title:"Spracheinstellungen", set_mqtt:"MQTT-Broker-Einstellungen", set_connect:"Verbinden", set_connected:"Mit MQTT-Broker verbunden!",
@@ -957,6 +966,7 @@ function applyI18n(){
   if(typeof renderCustomize==='function') renderCustomize();
   if(typeof applyTips==='function') applyTips();
   if(typeof statChart!=='undefined') renderChart(curPeriod);
+  if(typeof renderStatCharts==='function'){ const sv=document.getElementById('view-stat'); if(sv&&sv.classList.contains('active')) renderStatCharts(); }
 }
 function setLang(l){
   curLang = l;
@@ -992,6 +1002,7 @@ function refreshAll(){
   if(typeof renderEsp==='function') renderEsp();                 /* ESP32 ekranları regal adıyla güncel */
   if(typeof populateLcSel==='function') populateLcSel();         /* LoadCell regal seçici güncel */
   if(typeof populateRegalFilter==='function') populateRegalFilter(); /* Artikel regal filtresi güncel */
+  if(typeof renderStatCharts==='function'){ const sv=document.getElementById('view-stat'); if(sv&&sv.classList.contains('active')) renderStatCharts(); }
   const tc=document.getElementById('trashCount');
   if(tc) tc.textContent=window.TRASH&&window.TRASH.length?'('+window.TRASH.length+')':'';
 }
@@ -1016,6 +1027,8 @@ function sv(id,el){
   document.getElementById('view-'+id).classList.add('active');
   el.classList.add('active');
   if(window.innerWidth<=820) closeSidebar();   /* mobilde modül seçilince menüyü kapat */
+  /* İstatistik görünümü açılınca grafikleri doğru boyutta çiz */
+  if(id==='stat'){ if(typeof renderChart==='function') renderChart(curPeriod); if(typeof renderStatCharts==='function') renderStatCharts(); }
 }
 /* Akordeon sol menü: bölüm başlığına tıkla → altındaki modüller açılıp kapanır */
 function toggleNav(header){
@@ -2434,6 +2447,44 @@ function setPeriod(btn,period){
   btn.classList.add('on');
   renderChart(period);
 }
+/* ===== SÜREÇ & ORAN GRAFİKLERİ (modern: donut / pasta / yatay bar) ===== */
+let _statCharts={};
+function prodRegalIndex(a){ const bx=boxOfArt(a.no); if(bx) return bx.ri; if(a._reg!=null&&RD[a._reg]) return a._reg; return regIdxFromLoc(a.loc); }
+function _gridColor(){ return 'rgba(128,128,128,.12)'; }
+function _tickColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--txt3').trim()||'#5a6380'; }
+function _legendColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--txt2').trim()||'#9ba3bf'; }
+function _destroyStat(k){ if(_statCharts[k]){ _statCharts[k].destroy(); delete _statCharts[k]; } }
+function drawCircle(id,key,data,labels,colors,type){
+  const ctx=document.getElementById(id); if(!ctx||typeof Chart==='undefined') return;
+  _destroyStat(key);
+  _statCharts[key]=new Chart(ctx,{type:type||'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderColor:'var(--panel)',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:type==='pie'?0:'56%',
+      plugins:{legend:{position:'bottom',labels:{color:_legendColor(),font:{size:9},boxWidth:10,padding:6}}}}});
+}
+function drawHBar(id,key,labels,data,colors){
+  const ctx=document.getElementById(id); if(!ctx||typeof Chart==='undefined') return;
+  _destroyStat(key);
+  _statCharts[key]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:_tickColor(),font:{size:8}},grid:{color:_gridColor()}},y:{ticks:{color:_tickColor(),font:{size:9}},grid:{display:false}}}}});
+}
+const STAT_PALETTE=['#ff5500','#4d9dff','#0fdb7e','#ffb800','#7f77dd','#22d3ee','#e24b4a','#a0d911'];
+function renderStatCharts(){
+  if(typeof Chart==='undefined') return;
+  const arts=window.ARTS;
+  /* 1) Stok durum dağılımı (oran) */
+  const ok=arts.filter(a=>a.st==='ok').length, low=arts.filter(a=>a.st==='low').length, crit=arts.filter(a=>a.st==='crit').length;
+  drawCircle('statStatusChart','status',[ok,low,crit],[t('stokta'),t('dusuk'),t('kritik')],['#0fdb7e','#ffb800','#ff4560']);
+  /* 2) Kanban süreç dağılımı (pasta) */
+  const g=arts.filter(a=>kanbanStatus(a)==='gruen').length, ge=arts.filter(a=>kanbanStatus(a)==='gelb').length, rt=arts.filter(a=>kanbanStatus(a)==='rot').length;
+  drawCircle('statKanbanChart','kanban',[g,ge,rt],[t('kb_ok'),t('kb_order'),t('kb_crit')],['#0fdb7e','#ffb800','#ff4560'],'pie');
+  /* 3) En çok stoklu ürünler (yatay bar) */
+  const top=[...arts].sort((a,b)=>(b.qty||0)-(a.qty||0)).slice(0,6);
+  drawHBar('statTopChart','top',top.map(a=>a.no),top.map(a=>a.qty||0),top.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
+  /* 4) Regal bazında toplam stok (yatay bar) */
+  const reg=RD.map((rr,ri)=>({n:rr.n, q:arts.filter(a=>prodRegalIndex(a)===ri).reduce((s,a)=>s+(a.qty||0),0)}));
+  drawHBar('statRegalChart','regal',reg.map(x=>x.n),reg.map(x=>x.q),reg.map((_,i)=>STAT_PALETTE[i%STAT_PALETTE.length]));
+}
 function applyDateRange(){
   const f=document.getElementById('statFrom').value, tt=document.getElementById('statTo').value;
   if(!f||!tt){ showToast(t('dr_need')); return; }
@@ -2574,7 +2625,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   restoreState();   // kayıtlı veri varsa demo verisinin yerine yükle
   reconcileLocations();   // konumları cache'li regal indeksinden onar (kopuklukları düzeltir)
   restoreTheme();   // kayıtlı tema (gece/gündüz + parlaklık + renk + font) uygula
-  const BUILD='b26'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
+  const BUILD='b27'; const sbB=document.getElementById('sb-build'); if(sbB) sbB.textContent=BUILD; document.title='HEUFT Smart Regal · '+BUILD;
   renderRegalVis();
   renderRegalYapisi();
   renderArt(window.ARTS);
